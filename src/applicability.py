@@ -20,7 +20,7 @@ class City(Applicability):
     """
     @staticmethod
     def is_entity_applicable(entity):
-        return 'place' in entity.tags and entity.tags['place'] == 'city'
+        return entity and 'place' in entity.tags and entity.tags['place'] == 'city'
 
 
 class Town(Applicability):
@@ -29,7 +29,8 @@ class Town(Applicability):
     """
     @staticmethod
     def is_entity_applicable(entity):
-        return 'place' in entity.tags and entity.tags['place'] == 'town'
+        return entity and 'place' in entity.tags and entity.tags['place'] == 'town'
+
 
 class Village(Applicability):
     """
@@ -37,4 +38,4 @@ class Village(Applicability):
     """
     @staticmethod
     def is_entity_applicable(entity):
-        return 'place' in entity.tags and entity.tags['place'] == 'village'
+        return entity and 'place' in entity.tags and entity.tags['place'] == 'village'

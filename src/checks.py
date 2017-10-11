@@ -17,7 +17,7 @@ logger = tools.get_logger(__name__)
 
 class AbstractCheck(object):
     applicable_on = []
-    maps_applicable_on = []
+    maps_applicable_on = ['*']
     depends_on = []
     is_fixable = False
     explanation = ''

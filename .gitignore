@@ -9,12 +9,16 @@ serbian_osm_lint.log
 
 # pywikibot cache
 apicache/
+throttle.ctrl
 
 # OSM password
 src/osm-password
 
 # Default name for generated template
 report.html
+
+# PyCharm
+.idea
 
 # C extensions
 *.so

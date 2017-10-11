@@ -45,9 +45,9 @@ fallback PBF reader._
 
 2. Open src/configuration.py and adopt as necessary. Default configuration is for reporting.
 
-3. Run
+3. From root directory, run:
 
-        python main.py
+        python src/main.py
 
 List of checks
 --------------

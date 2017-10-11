@@ -1,0 +1,125 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="Date-Revision-yyyymmdd" content="20151015">
+        <meta http-equiv="Content-Language" content="en">
+        <title>Serbian OSM lint - Results</title>
+        <link rel="stylesheet" href="apache-maven-fluido-1.css">
+    </head>
+    <body class="topBarDisabled">
+        <div class="container-fluid">
+            <div class="row-fluid"> 
+                <div id="bodyColumn" class="span10">
+                    <div class="section">
+                        <h2>Serbian OSM lint report for {{ d.strftime('%d.%m.%Y.') }}</h2>
+                        <p>The following document contains the results of <a class="externalLink" href="http://checkstyle.sourceforge.net/">Serbian OSM lint</a></p>
+                    </div>
+                    <div class="section">
+                        <h2><a name="Summary"></a>Summary</h2>
+                        <table class="table table-striped" border="0">
+                            <tbody>
+                                <tr class="a">
+                                    <th>Maps processed</th>
+                                    <th>Total checks</th>
+                                    <th>Total errors</th>
+                                    <th>Auto fixable errors</th>
+                                </tr>
+                                <tr class="b">
+                                    <td>{{ summary.maps }}</td>
+                                    <td>{{ summary.count_total_checks }}</td>
+                                    <td>{{ summary.count_total_errors }}</td>
+                                    <td>{{ summary.count_total_fixable_errors }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h2><a name="Countries"></a>By countries</h2>
+                        <table class="table table-striped" border="0">
+                            <tbody>
+                                <tr class="a">
+                                    <th>Country</th>
+                                    <th>Total checks</th>
+                                    <th>Total errors</th>
+                                    <th>Auto fixable errors</th>
+                                </tr>
+                                {% for country in countries %}
+                                <tr class="b">
+                                    <td>{{ country[0] }}</td>
+                                    <td>{{ country.1.count_map_checks }}</td>
+                                    <td>{{ country.1.count_map_errors }}</td>
+                                    <td>{{ country.1.count_map_fixable_errors }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h2><a name="Rules"></a>By check type</h2>
+                        <table class="table table-striped" border="0">
+                            <tbody>
+                                <tr class="a">
+                                    <th>Check</th>
+                                    <th>Explanation</th>
+                                    <th>Total checks</th>
+                                    <th>Total errors</th>
+                                </tr>
+                                {% for check_type, check_type_dict in check_types.items() %}
+                                <tr class="b">
+                                    <td>{{ check_type }}</td>
+                                    <td>{{ check_type_dict.explanation }}</td>
+                                    <td>{{ check_type_dict.count_total_checks }}</td>
+                                    <td>{{ check_type_dict.count_total_errors }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h2><a name="Errors"></a>Errors</h2>
+                        {% for map_name, map_check in all_checks.items() %}
+                        <div class="section">
+                            <h3 id="Serbia">{{ map_name }}</h3>
+                            <table class="table table-striped" border="0">
+                                <tbody>
+                                    <tr class="a">
+                                        <th>Entity</th>
+                                        <th>Check</th>
+                                        <th>Message</th>
+                                    </tr>
+                                    {% for entity_id, entity_check in map_check.items() %}
+                                    {% for type_check, check in entity_check.2.items() %}
+                                    {% if check.result.value == 4 %}
+                                    <tr class="b">
+                                        <td><a href="https://www.openstreetmap.org/{{ entity_check.1 }}/{{ entity_id }}">{{ entity_check.0 }}</a></td>
+                                        <td>{{ type_check }}</td>
+                                        <td>
+                                            {% if check.messages|length == 1 %}
+                                            {{ check.messages.0 }}
+                                            {% else %}
+                                            <ul>
+                                                {% for message in check.messages %}
+                                                <li>{{ message }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

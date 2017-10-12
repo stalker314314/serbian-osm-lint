@@ -12,7 +12,7 @@ apicache/
 throttle.ctrl
 
 # OSM password
-src/osm-password
+osm-password
 
 # Default name for generated template
 report.html

@@ -68,7 +68,7 @@ def generate_report(context, all_checks):
         count_map_checks = len(map_check)
         count_map_errors, count_map_fixable_errors = 0, 0
         for entity_check in map_check.values():
-            for type_check in entity_check[1].values():
+            for type_check in entity_check[2].values():
                 if type_check['result'] == Result.CHECKED_ERROR:
                     count_map_errors = count_map_errors + 1
                     if type_check['fixable']:
@@ -91,7 +91,7 @@ def generate_report(context, all_checks):
     check_types = {}
     for map_name, map_check in all_checks.items():
         for entity_check in map_check.values():
-            for type_check, check in entity_check[1].items():
+            for type_check, check in entity_check[2].items():
                 if type_check not in check_types:
                     # DO NOT REMOVE, needed to import it, so we can query __doc__ from those checks
                     import checks # pylint: disable=unused-import

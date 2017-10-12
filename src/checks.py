@@ -53,7 +53,7 @@ class NameMissingCheck(AbstractCheck):
     Checks that 'name' tag is present in entity.
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(NameMissingCheck, self).__init__(entity_context)
@@ -71,7 +71,7 @@ class NameCyrillicCheck(AbstractCheck):
     """
     depends_on = [NameMissingCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(NameCyrillicCheck, self).__init__(entity_context)
@@ -195,7 +195,7 @@ class WikipediaEntryExistsCheck(AbstractCheck):
     Check that there exists Wikipedia entry for entity.
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikipediaEntryExistsCheck, self).__init__(entity_context)
@@ -214,7 +214,7 @@ class WikipediaEntryIsInSerbianCheck(AbstractCheck):
     """
     depends_on = [WikipediaEntryExistsCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikipediaEntryIsInSerbianCheck, self).__init__(entity_context)
@@ -234,7 +234,7 @@ class WikipediaEntryValidCheck(AbstractCheck):
     """
     depends_on = [WikipediaEntryExistsCheck, WikipediaEntryIsInSerbianCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikipediaEntryValidCheck, self).__init__(entity_context)
@@ -256,7 +256,7 @@ class WikidataEntryExistsCheck(AbstractCheck):
     Check that there exists Wikidata entry for entity. 
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikidataEntryExistsCheck, self).__init__(entity_context)
@@ -275,7 +275,7 @@ class WikidataEntryValidCheck(AbstractCheck):
     """
     depends_on = [WikidataEntryExistsCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikidataEntryValidCheck, self).__init__(entity_context)
@@ -296,7 +296,7 @@ class WikipediaAndWikidataInSyncCheck(AbstractCheck):
     """
     depends_on = [WikipediaEntryValidCheck, WikidataEntryValidCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikipediaAndWikidataInSyncCheck, self).__init__(entity_context)
@@ -316,7 +316,7 @@ class IsInCountryCheck(AbstractCheck):
     Checks that there exists "is_in:country" tag
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['serbia']
+    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):

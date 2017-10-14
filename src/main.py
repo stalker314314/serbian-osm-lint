@@ -162,7 +162,7 @@ def process_map_with_osmread(context, filename):
         if processed % 100000 == 0:
             logger.info('Processed %d entities', processed)
             # If needed, this is how you can stop execution early
-            return all_checks
+            # return all_checks
         checks = process_entity(entity, context)
 
         entity_type = None

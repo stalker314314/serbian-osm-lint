@@ -24,6 +24,9 @@ class AbstractCheck(object):
 
     def __init__(self, entity_context):
         self.entity_context = entity_context
+        # helpers to shorten getting stuff from global_context
+        self.map = entity_context['global_context']['map']
+        self.dry_run = entity_context['global_context']['dry_run']
 
     def do_check(self, entity):
         """
@@ -107,8 +110,8 @@ class LatinNameExistsCheck(AbstractCheck):
         super(LatinNameExistsCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
-        if (self.entity_context['global_context']['map'] == 'Serbia' and 'name:sr-Latn' not in entity.tags) or\
-                (self.entity_context['global_context']['map'] != 'Serbia' and 'name:sr' in entity.tags):
+        if (self.map == 'Serbia' and 'name:sr-Latn' not in entity.tags) or\
+                (self.map != 'Serbia' and 'name:sr' in entity.tags):
             place_type = entity.tags['place']
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
             return 'Latin name missing for {0} {1}'.format(place_type, name)
@@ -122,7 +125,7 @@ class LatinNameExistsCheck(AbstractCheck):
             # Doesn't make sense to set latin name, if original name is not in cyrillic
             return ''
 
-        name = entity.tags['name'] if self.entity_context['global_context']['map'] == 'Serbia' else entity.tags['name:sr']
+        name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
         latin_name = cyr2lat(name)
         question = 'Are you sure you want to append tag "name:sr-Latn" with value "{0}" to entity "{1}"'.format(
             latin_name, name
@@ -133,7 +136,7 @@ class LatinNameExistsCheck(AbstractCheck):
             if 'name:sr-Latn' not in way['tag']:
                 if self.ask_confirmation(question):
                     way['tag']['name:sr-Latn'] = latin_name
-                    if not self.entity_context['global_context']['dry_run']:
+                    if not self.dry_run:
                         api.WayUpdate(way)
                     return 'name:sr-Latn for way {0} didn\'t exists, added it as "{1}"'.format(name, latin_name)
         elif isinstance(entity, Node):
@@ -141,7 +144,7 @@ class LatinNameExistsCheck(AbstractCheck):
             if 'name:sr-Latn' not in node['tag']:
                 if self.ask_confirmation(question):
                     node['tag']['name:sr-Latn'] = latin_name
-                    if not self.entity_context['global_context']['dry_run']:
+                    if not self.dry_run:
                         api.NodeUpdate(node)
                     return 'name:sr-Latn for node {0} didn\'t exists, added it as "{1}"'.format(name, latin_name)
         return ''
@@ -175,14 +178,14 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
             way = api.WayGet(entity.id)
             if 'name:sr-Latn' in way['tag'] and way['tag']['name:sr-Latn'] != latin_name:
                 way['tag']['name:sr-Latn'] = latin_name
-                if not self.entity_context['global_context']['dry_run']:
+                if not self.dry_run:
                     api.WayUpdate(way)
                 return 'name:sr-Latn for way {0} was in cyrillic, fixed it to be "{1}"'.format(name, latin_name)
         elif isinstance(entity, Node):
             node = api.NodeGet(entity.id)
             if 'name:sr-Latn' in node['tag'] and node['tag']['name:sr-Latn'] != latin_name:
                 node['tag']['name:sr-Latn'] = latin_name
-                if not self.entity_context['global_context']['dry_run']:
+                if not self.dry_run:
                     api.NodeUpdate(node)
                 return 'name:sr-Latn for node {0} was in cyrillic, fixed it to be "{1}"'.format(name, latin_name)
         return ''
@@ -354,14 +357,14 @@ class IsInCountryCheck(AbstractCheck):
             way = api.WayGet(entity.id)
             if 'is_in:country' not in way['tag']:
                 way['tag']['is_in:country'] = 'Serbia'
-                if not self.entity_context['global_context']['dry_run']:
+                if not self.dry_run:
                     api.WayUpdate(way)
                 return 'is_in:country for way {0} was missing, added it to be "{1}"'.format(name, 'Serbia')
         elif isinstance(entity, Node):
             node = api.NodeGet(entity.id)
             if 'is_in:country' not in node['tag']:
                 node['tag']['is_in:country'] = 'Serbia'
-                if not self.entity_context['global_context']['dry_run']:
+                if not self.dry_run:
                     api.NodeUpdate(node)
                 return 'is_in:country for node {0} was missing, added it to be "{1}"'.format(name, 'Serbia')
         return ''

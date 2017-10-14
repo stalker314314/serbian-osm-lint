@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import checks
 import osmapi
 
@@ -20,7 +21,7 @@ _checks = [
 
 # List of all maps that Serbian OSM Lint will check (in the format "common name"-> URI)
 _maps = {
-    #'Austria': 'https://download.geofabrik.de/europe/austria-latest.osm.pbf',
+    'Austria': 'https://download.geofabrik.de/europe/austria-latest.osm.pbf',
     'Bosnia-Herzegovina': 'https://download.geofabrik.de/europe/bosnia-herzegovina-latest.osm.pbf',
     'Bulgaria': 'https://download.geofabrik.de/europe/bulgaria-latest.osm.pbf',
     'Croatia': 'https://download.geofabrik.de/europe/croatia-latest.osm.pbf',
@@ -30,8 +31,15 @@ _maps = {
 }
 
 _dry_run = True  # Do we actually commit OSM edits, or just change, but don't commit
+_passwordfile='osm-password'
 
-_api = osmapi.OsmApi(username='branko@kokanovic.org', passwordfile='osm-password',
+if not os.path.isfile(_passwordfile):
+    error_msg = 'File {0} is missing. You need to create it and write in it <your_osm_mail>:<your_osm_password> for' \
+                'Serbian OSM Lint to function.'.format(_passwordfile)
+    print(error_msg)
+    raise Exception(error_msg)
+
+_api = osmapi.OsmApi(passwordfile=_passwordfile,
                      changesetauto=not _dry_run, changesetautosize=500, changesetautotags=
                      {u"comment": u"Serbian lint bot. Various fixes around wikidata/wikipedia links",
                       u"tag": u"mechanical=yes"})

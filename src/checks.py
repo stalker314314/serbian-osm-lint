@@ -47,6 +47,18 @@ class AbstractCheck(object):
         """
         return ''
 
+    @staticmethod
+    def ask_confirmation(input_text):
+        """
+        Simple wrapper to ask user to do something.
+        :param input_text: Text to ask. Method will append "(y/n)" 
+        :return: True if user confirmed, False otherwise
+        """
+        response = input('{0} (Y/n)?'.format(input_text))
+        if response == '' or response.lower() == 'y':
+            return True
+        return False
+
 
 class NameMissingCheck(AbstractCheck):
     """
@@ -103,29 +115,35 @@ class LatinNameExistsCheck(AbstractCheck):
         return ''
 
     def fix(self, entity, api):
-        if NameMissingCheck().do_check(entity) != '':
+        if NameMissingCheck(self.entity_context).do_check(entity) != '':
             # We cannot automatically set latin name, if cyrillic is not set
             return ''
-        if NameCyrillicCheck().do_check(entity) != '':
+        if NameCyrillicCheck(self.entity_context).do_check(entity) != '':
             # Doesn't make sense to set latin name, if original name is not in cyrillic
             return ''
 
-        name = entity.tags['name'] if self.entity_context['map'] == 'Serbia' else entity.tags['name:sr']
+        name = entity.tags['name'] if self.entity_context['global_context']['map'] == 'Serbia' else entity.tags['name:sr']
         latin_name = cyr2lat(name)
+        question = 'Are you sure you want to append tag "name:sr-Latn" with value "{0}" to entity "{1}"'.format(
+            latin_name, name
+        )
+
         if isinstance(entity, Way):
             way = api.WayGet(entity.id)
             if 'name:sr-Latn' not in way['tag']:
-                way['tag']['name:sr-Latn'] = latin_name
-                if not self.entity_context['global_context']['dry_run']:
-                    api.WayUpdate(way)
-                return 'name:sr-Latn for way {0} didn\'t exists, added it as "{1}"'.format(name, latin_name)
+                if self.ask_confirmation(question):
+                    way['tag']['name:sr-Latn'] = latin_name
+                    if not self.entity_context['global_context']['dry_run']:
+                        api.WayUpdate(way)
+                    return 'name:sr-Latn for way {0} didn\'t exists, added it as "{1}"'.format(name, latin_name)
         elif isinstance(entity, Node):
             node = api.NodeGet(entity.id)
             if 'name:sr-Latn' not in node['tag']:
-                node['tag']['name:sr-Latn'] = latin_name
-                if not self.entity_context['global_context']['dry_run']:
-                    api.NodeUpdate(node)
-                return 'name:sr-Latn for node {0} didn\'t exists, added it as "{1}"'.format(name, latin_name)
+                if self.ask_confirmation(question):
+                    node['tag']['name:sr-Latn'] = latin_name
+                    if not self.entity_context['global_context']['dry_run']:
+                        api.NodeUpdate(node)
+                    return 'name:sr-Latn for node {0} didn\'t exists, added it as "{1}"'.format(name, latin_name)
         return ''
 
 

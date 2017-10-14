@@ -51,12 +51,17 @@ class AbstractCheck(object):
         return ''
 
     @staticmethod
-    def ask_confirmation(input_text):
+    def ask_confirmation(input_text, entity):
         """
-        Simple wrapper to ask user to do something.
-        :param input_text: Text to ask. Method will append "(y/n)" 
+        Simple wrapper to ask user to do something. Method will append "(y/n)" and dump entity
+        :param input_text: Text to ask. 
+        :param entity: entity for whcih question is being asked
         :return: True if user confirmed, False otherwise
         """
+        for tag_name, tag_value in entity.tags.items():
+            print('{0}: {1}'.format(tag_name, tag_value))
+        is_node = isinstance(entity, Node)
+        print('https://www.openstreetmap.org/{0}/{1}'.format('node' if is_node else 'way', entity.id))
         response = input('{0} (Y/n)?'.format(input_text))
         if response == '' or response.lower() == 'y':
             return True
@@ -94,7 +99,7 @@ class NameCyrillicCheck(AbstractCheck):
     def do_check(self, entity):
         if 'name' in entity.tags and not at_least_some_in_cyrillic(entity.tags['name']):
             place_type = entity.tags['place']
-            return 'Seems that city name is not in cyrillic for {0} "{1}"'.format(place_type, entity.tags['name'])
+            return 'Seems that {0} name is not in cyrillic for "{1}"'.format(place_type, entity.tags['name'])
         return ''
 
 
@@ -134,7 +139,7 @@ class LatinNameExistsCheck(AbstractCheck):
         if isinstance(entity, Way):
             way = api.WayGet(entity.id)
             if 'name:sr-Latn' not in way['tag']:
-                if self.ask_confirmation(question):
+                if self.ask_confirmation(question, entity):
                     way['tag']['name:sr-Latn'] = latin_name
                     if not self.dry_run:
                         api.WayUpdate(way)
@@ -142,7 +147,7 @@ class LatinNameExistsCheck(AbstractCheck):
         elif isinstance(entity, Node):
             node = api.NodeGet(entity.id)
             if 'name:sr-Latn' not in node['tag']:
-                if self.ask_confirmation(question):
+                if self.ask_confirmation(question, entity):
                     node['tag']['name:sr-Latn'] = latin_name
                     if not self.dry_run:
                         api.NodeUpdate(node)
@@ -152,7 +157,7 @@ class LatinNameExistsCheck(AbstractCheck):
 
 class LatinNameSameAsCyrillicCheck(AbstractCheck):
     """
-    If cyrillic name and sr-Latn name tags exists, checks that cyrillic name is transliterated equivalent to sr:-Latn.
+    If cyrillic name and sr-Latn name tags exists, checks that cyrillic name is transliterated equivalently to sr-Latn.
     """
     depends_on = [NameMissingCheck, NameCyrillicCheck, LatinNameExistsCheck]
     applicable_on = [City, Town, Village]
@@ -164,30 +169,41 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
 
     def do_check(self, entity):
         latin_name = entity.tags['name:sr-Latn']
-        cyrillic_name = entity.tags['name']
+        cyrillic_name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
         if cyr2lat(cyrillic_name) != latin_name:
             place_type = entity.tags['place']
-            return 'Latin name {0} for {1} {2} is not properly transilaterated'.format(
+            return 'Latin name {0} for {1} {2} is not properly transliterated'.format(
                 latin_name, place_type, cyrillic_name)
         return ''
 
     def fix(self, entity, api):
-        name = entity.tags['name']
-        latin_name = cyr2lat(name)
+        name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
+        old_latin_name = entity.tags['name:sr-Latn']
+        correct_latin_name = cyr2lat(name)
+        question = 'Latin name different than cyrillic name. Are you sure you want to change tag "name:sr-Latn" ' \
+                   'for entity "{0}" with new value "{1}" (old value is "{2}") '.format(
+                    name, correct_latin_name, old_latin_name
+        )
         if isinstance(entity, Way):
             way = api.WayGet(entity.id)
-            if 'name:sr-Latn' in way['tag'] and way['tag']['name:sr-Latn'] != latin_name:
-                way['tag']['name:sr-Latn'] = latin_name
-                if not self.dry_run:
-                    api.WayUpdate(way)
-                return 'name:sr-Latn for way {0} was in cyrillic, fixed it to be "{1}"'.format(name, latin_name)
+            online_name = way['tag']['name'] if self.map == 'Serbia' else way['tag']['name:sr']
+            if 'name:sr-Latn' in way['tag'] and online_name == name and way['tag']['name:sr-Latn'] == old_latin_name:
+                if self.ask_confirmation(question, entity):
+                    way['tag']['name:sr-Latn'] = correct_latin_name
+                    if not self.dry_run:
+                        api.WayUpdate(way)
+                    return 'name:sr-Latn for way {0} was different than in cyrillic, fixed it to be "{1}"'.format(
+                        name, correct_latin_name)
         elif isinstance(entity, Node):
             node = api.NodeGet(entity.id)
-            if 'name:sr-Latn' in node['tag'] and node['tag']['name:sr-Latn'] != latin_name:
-                node['tag']['name:sr-Latn'] = latin_name
-                if not self.dry_run:
-                    api.NodeUpdate(node)
-                return 'name:sr-Latn for node {0} was in cyrillic, fixed it to be "{1}"'.format(name, latin_name)
+            online_name = node['tag']['name'] if self.map == 'Serbia' else node['tag']['name:sr']
+            if 'name:sr-Latn' in node['tag'] and online_name == name and node['tag']['name:sr-Latn'] == old_latin_name:
+                if self.ask_confirmation(question, entity):
+                    node['tag']['name:sr-Latn'] = correct_latin_name
+                    if not self.dry_run:
+                        api.NodeUpdate(node)
+                    return 'name:sr-Latn for node {0} was different than in cyrillic, fixed it to be "{1}"'.format(
+                        name, correct_latin_name)
         return ''
 
 

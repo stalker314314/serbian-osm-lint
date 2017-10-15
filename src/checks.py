@@ -3,7 +3,6 @@
 import pywikibot
 import tools
 from applicability import City, Town, Village
-from osmread import Way, Node
 
 from transliteration import at_least_some_in_cyrillic, cyr2lat
 
@@ -51,6 +50,35 @@ class AbstractCheck(object):
         return ''
 
     @staticmethod
+    def entity_type(entity):
+        """
+        Helper method to get type of the entity.
+        :param entity: Entity to get type from
+        :return: Type of the entity. Can be one of the 'node', 'way', 'relation'
+        """
+        try:
+            import osmread
+            if isinstance(entity, osmread.Node):
+                return 'node'
+            elif isinstance(entity, osmread.Way):
+                return 'way'
+            elif isinstance(entity, osmread.Relation):
+                return 'relation'
+        except ImportError:
+            pass
+        try:
+            import osmium
+            if isinstance(entity, osmium.osm.OSMObject.Node):
+                return 'node'
+            elif isinstance(entity, osmium.osm.OSMObject.Way):
+                return 'way'
+            elif isinstance(entity, osmium.osm.OSMObject.Relation):
+                return 'relation'
+        except ImportError:
+            pass
+        raise Exception('Entity is neither PyOsmium not osmread known type'.format(entity))
+
+    @staticmethod
     def ask_confirmation(input_text, entity):
         """
         Simple wrapper to ask user to do something. Method will append "(y/n)" and dump entity
@@ -60,8 +88,7 @@ class AbstractCheck(object):
         """
         for tag_name, tag_value in entity.tags.items():
             print('{0}: {1}'.format(tag_name, tag_value))
-        is_node = isinstance(entity, Node)
-        print('https://www.openstreetmap.org/{0}/{1}'.format('node' if is_node else 'way', entity.id))
+        print('https://www.openstreetmap.org/{0}/{1}'.format(AbstractCheck.entity_type(entity), entity.id))
         response = input('{0} (Y/n)?'.format(input_text))
         if response == '' or response.lower() == 'y':
             return True
@@ -136,7 +163,7 @@ class LatinNameExistsCheck(AbstractCheck):
             latin_name, name
         )
 
-        if isinstance(entity, Way):
+        if self.entity_type(entity) == 'way':
             way = api.WayGet(entity.id)
             if 'name:sr-Latn' not in way['tag']:
                 if self.ask_confirmation(question, entity):
@@ -144,7 +171,7 @@ class LatinNameExistsCheck(AbstractCheck):
                     if not self.dry_run:
                         api.WayUpdate(way)
                     return 'name:sr-Latn for way {0} didn\'t exists, added it as "{1}"'.format(name, latin_name)
-        elif isinstance(entity, Node):
+        elif self.entity_type(entity) == 'node':
             node = api.NodeGet(entity.id)
             if 'name:sr-Latn' not in node['tag']:
                 if self.ask_confirmation(question, entity):
@@ -184,7 +211,7 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
                    'for entity "{0}" with new value "{1}" (old value is "{2}") '.format(
                     name, correct_latin_name, old_latin_name
         )
-        if isinstance(entity, Way):
+        if self.entity_type(entity) == 'way':
             way = api.WayGet(entity.id)
             online_name = way['tag']['name'] if self.map == 'Serbia' else way['tag']['name:sr']
             if 'name:sr-Latn' in way['tag'] and online_name == name and way['tag']['name:sr-Latn'] == old_latin_name:
@@ -194,7 +221,7 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
                         api.WayUpdate(way)
                     return 'name:sr-Latn for way {0} was different than in cyrillic, fixed it to be "{1}"'.format(
                         name, correct_latin_name)
-        elif isinstance(entity, Node):
+        elif self.entity_type(entity) == 'node':
             node = api.NodeGet(entity.id)
             online_name = node['tag']['name'] if self.map == 'Serbia' else node['tag']['name:sr']
             if 'name:sr-Latn' in node['tag'] and online_name == name and node['tag']['name:sr-Latn'] == old_latin_name:
@@ -369,14 +396,14 @@ class IsInCountryCheck(AbstractCheck):
     def fix(self, entity, api):
         name = entity.tags['name'] if 'name' in entity.tags else entity.id
         latin_name = cyr2lat(name)
-        if isinstance(entity, Way):
+        if self.entity_type(entity) == 'way':
             way = api.WayGet(entity.id)
             if 'is_in:country' not in way['tag']:
                 way['tag']['is_in:country'] = 'Serbia'
                 if not self.dry_run:
                     api.WayUpdate(way)
                 return 'is_in:country for way {0} was missing, added it to be "{1}"'.format(name, 'Serbia')
-        elif isinstance(entity, Node):
+        if self.entity_type(entity) == 'node':
             node = api.NodeGet(entity.id)
             if 'is_in:country' not in node['tag']:
                 node['tag']['is_in:country'] = 'Serbia'

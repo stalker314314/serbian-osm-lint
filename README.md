@@ -29,6 +29,11 @@ http://kokanovic.org/serbian-osm-lint
 
 If it is not daily updated there, contact me!
 
+[This is OSM user](https://www.openstreetmap.org/user/Serbian%20OSM%20Lint%20bot)
+that this script can be seen running live.
+[Here](https://wiki.openstreetmap.org/wiki/Automated_edits/Serbian-OSM-Lint) is its OSM Wiki page too.
+
+
 Usage
 -----
 

@@ -68,11 +68,11 @@ class AbstractCheck(object):
             pass
         try:
             import osmium
-            if isinstance(entity, osmium.osm.OSMObject.Node):
+            if isinstance(entity, osmium.osm.Node):
                 return 'node'
-            elif isinstance(entity, osmium.osm.OSMObject.Way):
+            elif isinstance(entity, osmium.osm.Way):
                 return 'way'
-            elif isinstance(entity, osmium.osm.OSMObject.Relation):
+            elif isinstance(entity, osmium.osm.Relation):
                 return 'relation'
         except ImportError:
             pass

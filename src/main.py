@@ -10,6 +10,7 @@ from jinja2 import Environment, PackageLoader
 
 import tools
 from configuration import global_context
+from osm_lint_entity import OsmLintEntity
 from engine import CheckEngine, Result
 
 logger = tools.setup_logger(logging_level=logging.INFO)
@@ -153,23 +154,20 @@ def process_map_with_osmread(context, filename):
     """
     Process one map given its filename, using osmread
     """
-    from osmread import parse_file, Way, Node
+    # This import is here since user doesn't have to have it (optional)
+    from osmread import parse_file, Way, Node, Relation
 
     processed = 0
     all_checks = {}
-    for entity in parse_file(filename):
+    for raw_entity in parse_file(filename):
+        entity = OsmLintEntity(raw_entity)
         processed += 1
         if processed % 100000 == 0:
             logger.info('Processed %d entities', processed)
             # If needed, this is how you can stop execution early
             # return all_checks
-        checks = process_entity(entity, context)
 
-        entity_type = None
-        if isinstance(entity, Way):
-            entity_type = 'way'
-        elif isinstance(entity, Node):
-            entity_type = 'node'
+        checks = process_entity(entity, context)
 
         if len(checks) > 0:
             if context['map'] == 'Serbia':
@@ -180,7 +178,7 @@ def process_map_with_osmread(context, filename):
                     name = '{0} / {1}'.format(original_name, entity.tags['name:sr'])
                 else:
                     name = original_name
-            all_checks[entity.id] = (name, entity_type, checks)
+            all_checks[entity.id] = (name, entity.entity_type, checks)
     return all_checks
 
 
@@ -188,7 +186,8 @@ def process_map_with_osmium(context, filename):
     """
     Process one map given its filename, using PyOsmium
     """
-    import osmium # This import is here since user doesn't have to have it
+    # This import is here since user doesn't have to have it (optional)
+    import osmium
 
     class SignalEndOfExecution(Exception):
         pass
@@ -200,7 +199,8 @@ def process_map_with_osmium(context, filename):
             self.processed = 0
             self.all_checks = {}
 
-        def process_entity(self, entity, entity_type):
+        def process_entity(self, raw_entity, entity_type):
+            entity = OsmLintEntity(raw_entity)
             self.processed += 1
             if self.processed % 100000 == 0:
                 logger.info('Processed %d entities', self.processed)

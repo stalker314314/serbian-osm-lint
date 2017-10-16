@@ -86,8 +86,8 @@ class AbstractCheck(object):
         :param entity: entity for whcih question is being asked
         :return: True if user confirmed, False otherwise
         """
-        for tag_name, tag_value in entity.tags.items():
-            print('{0}: {1}'.format(tag_name, tag_value))
+        for tag in entity.tags:
+            print('{0}: {1}'.format(tag.k, tag.v))
         print('https://www.openstreetmap.org/{0}/{1}'.format(AbstractCheck.entity_type(entity), entity.id))
         response = input('{0} (Y/n)?'.format(input_text))
         if response == '' or response.lower() == 'y':

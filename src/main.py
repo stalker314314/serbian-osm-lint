@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 
+import concurrent.futures
 import datetime
 import logging
+import multiprocessing
 import os
 import tempfile
-import concurrent.futures
-import multiprocessing
 
 import requests
 from jinja2 import Environment, PackageLoader
 
 import tools
 from configuration import global_context
-from osm_lint_entity import OsmLintEntity
 from engine import CheckEngine, Result
+from osm_lint_entity import OsmLintEntity
 
 logger = tools.setup_logger(logging_level=logging.INFO)
 
@@ -97,7 +97,7 @@ def generate_report(context, all_checks):
             for type_check, check in entity_check[2].items():
                 if type_check not in check_types:
                     # DO NOT REMOVE, needed to import it, so we can query __doc__ from those checks
-                    import checks # pylint: disable=unused-import
+                    import checks  # pylint: disable=unused-import
                     type_check_cls = eval('checks.' + type_check)
                     check_types[type_check] = {'explanation': type_check_cls.__doc__.strip(),
                                                'count_total_checks': 0,
@@ -160,7 +160,7 @@ def process_map_with_osmread(context, filename):
     Process one map given its filename, using osmread
     """
     # This import is here since user doesn't have to have it (optional)
-    from osmread import parse_file, Way, Node, Relation
+    from osmread import parse_file
 
     processed = 0
     all_checks = {}
@@ -243,7 +243,7 @@ def main():
     thread_count = 1 if global_context['fix'] else multiprocessing.cpu_count()
     thread_count = min(thread_count, len(global_context['maps']))
     logger.info('Using %d threads to do work', thread_count)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=thread_count) as executor:
         for map_name in global_context['maps']:
             future = executor.submit(process_map, global_context, map_name)
             all_futures.append(future)

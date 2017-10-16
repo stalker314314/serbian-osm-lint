@@ -49,8 +49,7 @@ class AbstractCheck(object):
         """
         return ''
 
-    @staticmethod
-    def ask_confirmation(input_text, entity):
+    def ask_confirmation(self, input_text, entity):
         """
         Simple wrapper to ask user to do something. Method will append "(y/n)" and dump entity
         :param input_text: Text to ask. 
@@ -60,7 +59,7 @@ class AbstractCheck(object):
         for k, v in entity.tags.items():
             print('{0}: {1}'.format(k, v))
         print('https://www.openstreetmap.org/{0}/{1}'.format(entity.entity_type, entity.id))
-        response = input('{0} (Y/n)?'.format(input_text))
+        response = input('[{0}] {1} (Y/n)?'.format(self.map, input_text))
         if response == '' or response.lower() == 'y':
             return True
         return False

@@ -4,6 +4,8 @@ import datetime
 import logging
 import os
 import tempfile
+import concurrent.futures
+import multiprocessing
 
 import requests
 from jinja2 import Environment, PackageLoader
@@ -23,7 +25,7 @@ def download_map(map_name, map_uri):
     :param map_uri: URI of the map to download
     :return: Temprorary filename where map is downloaded
     """
-    logger.info('Downloading %s', map_uri)
+    logger.info('[%s] Downloading %s', map_name, map_uri)
     r = requests.get(map_uri, stream=True)
     if not r.ok:
         raise Exception(r.reason)
@@ -34,9 +36,9 @@ def download_map(map_name, map_uri):
             f.write(chunk)
             chunk_number = chunk_number + 1
             if chunk_number % (10 * 1024) == 0:
-                logger.info('Downloaded %d MB', chunk_number / 1024)
+                logger.info('[%s] Downloaded %d MB', map_name, chunk_number / 1024)
         f.close()
-        logger.info('Map %s downloaded, parsing it now', map_name)
+        logger.info('[%s] Map %s downloaded, parsing it now', map_name, map_name)
         return f.name
     except Exception as e:
         logger.exception(e)
@@ -51,7 +53,7 @@ def process_entity(entity, context):
     :param context: Context
     :return: List of all performed checks
     """
-    cr = CheckEngine(context['checks'], entity, global_context)
+    cr = CheckEngine(context['checks'], entity, context)
     return cr.check_all()
 
 
@@ -110,11 +112,13 @@ def generate_report(context, all_checks):
         fh.write(output)
 
 
-def process_map(context):
+def process_map(context, map_name):
     """
     Library agnostic map processing. It will download map and use either PyOsmium/osmread to read map.
     It also cleans all downloaded maps.
     """
+    logger.info('[%s] Starting processing of map %s', map_name, map_name)
+
     found_osmium, found_osmread = False, False
     try:
         import osmium
@@ -128,22 +132,23 @@ def process_map(context):
         pass
 
     if found_osmium:
-        logger.info('Found osmium library, using it')
+        logger.info('[%s] Found osmium library, using it', map_name)
     elif found_osmread:
-        logger.warning('Found osmread library, but not osmium library. Reading of maps will be slower')
+        logger.warning('[%s] Found osmread library, but not osmium library. Reading of maps will be slower', map_name)
     else:
-        logger.error('Didn\'t found any library for reading maps, quitting')
+        logger.error('[%s] Didn\'t found any library for reading maps, quitting', map_name)
         return
 
-    map_name = context['map']
+    context = context.copy()
+    context['map'] = map_name
     filename = download_map(map_name, context['maps'][map_name])
     try:
         if found_osmium:
-            return process_map_with_osmium(context, filename)
+            return map_name, process_map_with_osmium(context, filename)
         elif found_osmread:
-            return process_map_with_osmread(context, filename)
+            return map_name, process_map_with_osmread(context, filename)
         else:
-            logger.error('Didn\'t found any library for reading maps, quitting')
+            logger.error('[%s] Didn\'t found any library for reading maps, quitting', map_name)
     except Exception as e:
         logger.exception(e)
         os.remove(filename)
@@ -163,7 +168,7 @@ def process_map_with_osmread(context, filename):
         entity = OsmLintEntity(raw_entity)
         processed += 1
         if processed % 100000 == 0:
-            logger.info('Processed %d entities', processed)
+            logger.info('[%s] Processed %d entities', context['map'], processed)
             # If needed, this is how you can stop execution early
             # return all_checks
 
@@ -203,7 +208,7 @@ def process_map_with_osmium(context, filename):
             entity = OsmLintEntity(raw_entity)
             self.processed += 1
             if self.processed % 100000 == 0:
-                logger.info('Processed %d entities', self.processed)
+                logger.info('[%s] Processed %d entities', context['map'], self.processed)
                 # If needed, this is how you can stop execution early
                 # raise SignalEndOfExecution
             checks = process_entity(entity, self.context)
@@ -234,12 +239,20 @@ def process_map_with_osmium(context, filename):
 
 
 def main():
-    all_checks = {}
-    for map_name in global_context['maps']:
-        logger.info('Processing map %s', map_name)
-        global_context['map'] = map_name
-        checks = process_map(global_context)
-        all_checks[map_name] = checks
+    all_futures = []
+    thread_count = 1 if global_context['fix'] else multiprocessing.cpu_count()
+    thread_count = min(thread_count, len(global_context['maps']))
+    logger.info('Using %d threads to do work', thread_count)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
+        for map_name in global_context['maps']:
+            future = executor.submit(process_map, global_context, map_name)
+            all_futures.append(future)
+
+        all_checks = {}
+        for future in concurrent.futures.as_completed(all_futures):
+            map_name, checks = future.result()
+            all_checks[map_name] = checks
+
     if not global_context['dry_run']:
         global_context['api'].flush()
     if global_context['report']:

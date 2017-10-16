@@ -33,15 +33,12 @@ class CheckEngine(object):
         :return: String that tells what check did. If it is empty, it means there is no problem.
         """
         name = entity.tags['name'] if 'name' in entity.tags else entity.id
-        logger.debug('Starting check %s for entity %s', type(check).__name__, name)
         message = check.do_check(entity)
         if message != '': # OK, check is erroneous, let's see if we can perform fix
             if check.entity_context['global_context']['fix']:
                 message_fixed = check.fix(entity, check.entity_context['global_context']['api'])
                 if message_fixed != '':
-                    logger.debug(message_fixed)
-                else:
-                    logger.debug('Cannot automatically fix check %s for entity %s', type(check), name)
+                    logger.debug('[%s] %s', check.entity_context['global_context']['map'], message_fixed)
         return message
 
     def check_all(self, filter_not_checked=True):
@@ -95,8 +92,8 @@ class CheckEngine(object):
                     if dc_cls_name in entity_context['checks']:
                         result = entity_context['checks'][dc_cls_name]['result']
                         if result != Result.CHECKED_OK:
-                            logger.debug('Dependency %s was %s and check %s not satisfied',
-                                         dc_cls_name, result, check_cls_name)
+                            logger.debug('[%s] Dependency %s was %s and check %s not satisfied',
+                                         map_name, dc_cls_name, result, check_cls_name)
                             entity_context['checks'][check_cls_name] = {'result': Result.DEPENDENCY_NOT_SATISFIED,
                                                                         'messages': [],
                                                                         'fixable': False}
@@ -104,12 +101,13 @@ class CheckEngine(object):
                             satisfied = False
                             break
                     else:
-                        logger.debug('Dependency %s still not checked, skipping check %s for now',
-                                     dc_cls_name, check_cls_name)
+                        logger.debug('[%s] Dependency %s still not checked, skipping check %s for now',
+                                     map_name, dc_cls_name, check_cls_name)
                         satisfied = False
                         break
                 if satisfied:
-                    logger.debug('Check %s applicable and all dependencies satisfied, doing check', check_cls_name)
+                    logger.debug('[%s] Check %s applicable and all dependencies satisfied, doing check',
+                                 map_name, check_cls_name)
                     message = CheckEngine.do_entity_check_and_fix(check_cls(entity_context), self.entity)
                     if message == '':
                         entity_context['checks'][check_cls_name] = {'result': Result.CHECKED_OK,

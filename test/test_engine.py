@@ -25,9 +25,10 @@ class NoEntity(Applicability):
 class TestEngine(unittest.TestCase):
     def setUp(self):
         self.entity = Way(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, nodes=[])
+        self.default_global_context = {'fix': False, 'map': 'Serbia', 'dry_run': True}
 
     def test_empty_engine(self):
-        engine = CheckEngine([], self.entity, {})
+        engine = CheckEngine([], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()
@@ -46,7 +47,7 @@ class TestEngine(unittest.TestCase):
                 OnlyCheck.hit_check = OnlyCheck.hit_check + 1
                 return ''
 
-        engine = CheckEngine([OnlyCheck], self.entity, {})
+        engine = CheckEngine([OnlyCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()
@@ -54,7 +55,7 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(do_entity_check_and_fix.call_count, 0)
             self.assertEqual(len(results), 0)
             # Do again, but without filtering
-            engine = CheckEngine([OnlyCheck], self.entity, {})
+            engine = CheckEngine([OnlyCheck], self.entity, self.default_global_context)
             results = engine.check_all(filter_not_checked=False)
             self.assertEqual(OnlyCheck.hit_check, 0)
             self.assertEqual(do_entity_check_and_fix.call_count, 0)
@@ -76,7 +77,7 @@ class TestEngine(unittest.TestCase):
                 OnlyCheck.hit_check = OnlyCheck.hit_check + 1
                 return ''
 
-        engine = CheckEngine([OnlyCheck], self.entity, {'map': 'Serbia'})
+        engine = CheckEngine([OnlyCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()
@@ -116,7 +117,7 @@ class TestEngine(unittest.TestCase):
                 DependentCheck.hit_check = DependentCheck.hit_check + 1
                 return ''
 
-        engine = CheckEngine([IndependentCheck, DependentCheck], self.entity, {'map': 'Serbia'})
+        engine = CheckEngine([IndependentCheck, DependentCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()
@@ -124,8 +125,11 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(DependentCheck.hit_check, 0)
             self.assertEqual(do_entity_check_and_fix.call_count, 0)
             self.assertEqual(len(results), 0)
+
+        with patch.object(CheckEngine, 'do_entity_check_and_fix',
+                          wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             # Now again, without filtering checks
-            engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, {'map': 'Serbia'})
+            engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, self.default_global_context)
             results = engine.check_all(filter_not_checked=False)
             self.assertEqual(IndependentCheck.hit_check, 0)
             self.assertEqual(DependentCheck.hit_check, 0)
@@ -170,7 +174,7 @@ class TestEngine(unittest.TestCase):
                 DependentCheck.hit_check = DependentCheck.hit_check + 1
                 return ''
 
-        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, {'fix': False, 'map': 'Serbia'})
+        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()
@@ -184,7 +188,7 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(result['messages'][0], 'Error1')
             self.assertEqual(result['result'], Result.CHECKED_ERROR)
         # Now again, without filtering checks
-        engine = CheckEngine([IndependentCheck, DependentCheck], self.entity, {'fix': False, 'map': 'Serbia'})
+        engine = CheckEngine([IndependentCheck, DependentCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             IndependentCheck.hit_check = 0
@@ -233,7 +237,7 @@ class TestEngine(unittest.TestCase):
                 DependentCheck.hit_check = DependentCheck.hit_check + 1
                 return ''
 
-        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, {'map': 'Serbia'})
+        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()
@@ -246,7 +250,7 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.CHECKED_OK)
         # Now again, without filtering checks
-        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, {'map': 'Serbia'})
+        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             IndependentCheck.hit_check = 0
@@ -296,7 +300,7 @@ class TestEngine(unittest.TestCase):
                 DependentCheck.hit_check = DependentCheck.hit_check + 1
                 return 'Error2'
 
-        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, {'fix': False, 'map': 'Serbia'})
+        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()
@@ -345,7 +349,7 @@ class TestEngine(unittest.TestCase):
                 DependentCheck.hit_check = DependentCheck.hit_check + 1
                 return ''
 
-        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, {'map': 'Serbia'})
+        engine = CheckEngine([DependentCheck, IndependentCheck], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()
@@ -399,7 +403,7 @@ class TestEngine(unittest.TestCase):
 
         Check1.depends_on = [Check3]
 
-        engine = CheckEngine([Check1, Check2, Check3], self.entity, {'fix': False, 'map': 'Serbia'})
+        engine = CheckEngine([Check1, Check2, Check3], self.entity, self.default_global_context)
         try:
             engine.check_all()
             self.fail()
@@ -537,7 +541,7 @@ class TestEngine(unittest.TestCase):
                 return ''
 
         engine = CheckEngine([CheckA, CheckB, CheckC, CheckD, CheckE, CheckF, CheckG, CheckH],
-                             self.entity, {'map': 'Serbia'})
+                             self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
                           wraps=engine.do_entity_check_and_fix) as do_entity_check_and_fix:
             results = engine.check_all()

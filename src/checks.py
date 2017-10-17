@@ -119,7 +119,7 @@ class LatinNameExistsCheck(AbstractCheck):
 
     def do_check(self, entity):
         if (self.map == 'Serbia' and 'name:sr-Latn' not in entity.tags) or\
-                (self.map != 'Serbia' and 'name:sr' in entity.tags):
+                (self.map != 'Serbia' and 'name:sr-Latn' not in entity.tags):
             place_type = entity.tags['place']
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
             return 'Latin name missing for {0} {1}'.format(place_type, name)

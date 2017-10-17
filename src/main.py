@@ -2,15 +2,21 @@
 
 import argparse
 import datetime
-import simplejson
 import logging
 import multiprocessing
+
+# DO NOT REMOVE, needed to import it, so we can query __doc__ from those checks
+import checks
+
+_ = checks.AbstractCheck  # Just so lint is not complaining on unused import
+
 import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 
 import osmapi
 import requests
+import simplejson
 from jinja2 import Environment, PackageLoader
 
 import tools
@@ -98,9 +104,6 @@ def generate_report(context, all_checks):
         for entity_check in map_check.values():
             for type_check, check in entity_check[2].items():
                 if type_check not in check_types:
-                    # DO NOT REMOVE, needed to import it, so we can query __doc__ from those checks
-                    import checks
-                    _ = checks.AbstractCheck  # Just so lint is not complaining on unused import
                     type_check_cls = eval('checks.' + type_check)
                     check_types[type_check] = {'explanation': type_check_cls.__doc__.strip(),
                                                'count_total_checks': 0,
@@ -288,7 +291,10 @@ def create_global_context():
         parser.error(error_msg)
     with open(args.checks_file) as f:
         try:
-            checks = simplejson.load(f)
+            checks_str = simplejson.load(f)
+            all_checks = []
+            for check_str in checks_str:
+                all_checks.append(eval(check_str))
         except Exception as e:
             parser.error('Error during parsing of {}: \n{}'.format(args.checks_file, e))
 
@@ -298,7 +304,7 @@ def create_global_context():
                                      u"wikidata/wikipedia links",
                          u"tag": u"mechanical=yes"})
 
-    global_context = {'checks': checks,
+    global_context = {'checks': all_checks,
                       'maps': maps,
                       'report': not args.no_report,
                       'fix': args.fix,

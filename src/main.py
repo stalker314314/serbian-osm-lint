@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import concurrent.futures
 import datetime
 import logging
 import multiprocessing
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 
 import requests
 from jinja2 import Environment, PackageLoader
@@ -243,13 +243,16 @@ def main():
     thread_count = 1 if global_context['fix'] else multiprocessing.cpu_count()
     thread_count = min(thread_count, len(global_context['maps']))
     logger.info('Using %d threads to do work', thread_count)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=thread_count) as executor:
+
+    # If we are fixing stuff, we cannot use ProcessPoolExecutor since threads areinteracting with user
+    executor_cls = ThreadPoolExecutor if global_context['fix'] else ProcessPoolExecutor
+    with executor_cls(max_workers=thread_count) as executor:
         for map_name in global_context['maps']:
             future = executor.submit(process_map, global_context, map_name)
             all_futures.append(future)
 
         all_checks = {}
-        for future in concurrent.futures.as_completed(all_futures):
+        for future in as_completed(all_futures):
             map_name, checks = future.result()
             all_checks[map_name] = checks
 

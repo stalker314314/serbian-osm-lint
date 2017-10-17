@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 
+import argparse
 import datetime
+import simplejson
 import logging
 import multiprocessing
 import os
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 
+import osmapi
 import requests
 from jinja2 import Environment, PackageLoader
 
 import tools
-from configuration import global_context
 from engine import CheckEngine, Result
 from osm_lint_entity import OsmLintEntity
 
@@ -20,7 +22,7 @@ logger = tools.setup_logger(logging_level=logging.INFO)
 
 def download_map(map_name, map_uri):
     """
-    Downloads map from internet. It is up to the caller to remove this temprorary file.
+    Downloads map from internet. It is up to the caller to remove this temporary file.
     :param map_name: Name of the map to download
     :param map_uri: URI of the map to download
     :return: Temprorary filename where map is downloaded
@@ -97,7 +99,8 @@ def generate_report(context, all_checks):
             for type_check, check in entity_check[2].items():
                 if type_check not in check_types:
                     # DO NOT REMOVE, needed to import it, so we can query __doc__ from those checks
-                    import checks  # pylint: disable=unused-import
+                    import checks
+                    _ = checks.AbstractCheck  # Just so lint is not complaining on unused import
                     type_check_cls = eval('checks.' + type_check)
                     check_types[type_check] = {'explanation': type_check_cls.__doc__.strip(),
                                                'count_total_checks': 0,
@@ -172,9 +175,9 @@ def process_map_with_osmread(context, filename):
             # If needed, this is how you can stop execution early
             # return all_checks
 
-        checks = process_entity(entity, context)
+        checks_done = process_entity(entity, context)
 
-        if len(checks) > 0:
+        if len(checks_done) > 0:
             if context['map'] == 'Serbia':
                 name = entity.tags['name'] if 'name' in entity.tags else entity.id
             else:
@@ -183,7 +186,7 @@ def process_map_with_osmread(context, filename):
                     name = '{0} / {1}'.format(original_name, entity.tags['name:sr'])
                 else:
                     name = original_name
-            all_checks[entity.id] = (name, entity.entity_type, checks)
+            all_checks[entity.id] = (name, entity.entity_type, checks_done)
     return all_checks
 
 
@@ -211,9 +214,9 @@ def process_map_with_osmium(context, filename):
                 logger.info('[%s] Processed %d entities', context['map'], self.processed)
                 # If needed, this is how you can stop execution early
                 # raise SignalEndOfExecution
-            checks = process_entity(entity, self.context)
+            checks_done = process_entity(entity, self.context)
 
-            if len(checks) > 0:
+            if len(checks_done) > 0:
                 if context['map'] == 'Serbia':
                     name = entity.tags['name'] if 'name' in entity.tags else entity.id
                 else:
@@ -222,7 +225,7 @@ def process_map_with_osmium(context, filename):
                         name = '{0} / {1}'.format(original_name, entity.tags['name:sr'])
                     else:
                         name = original_name
-                self.all_checks[entity.id] = (name, entity_type, checks)
+                self.all_checks[entity.id] = (name, entity_type, checks_done)
 
         def node(self, n):
             self.process_entity(n, 'node')
@@ -238,13 +241,82 @@ def process_map_with_osmium(context, filename):
     return sloh.all_checks
 
 
+def create_global_context():
+    parser = argparse.ArgumentParser(
+        description='Serbian OSM Lint - helper tool to detect and fix various issues on Serbian OSM project ')
+    parser.add_argument('--output-file', default='report.html',
+                        help='Name of output HTML file. Default value is "report.html"')
+    parser.add_argument('--maps-file', default='maps.json',
+                        help='Name of file containing maps in JSON format. Default value is "maps.json"')
+    parser.add_argument('--checks-file', default='checks.json',
+                        help='Name of file containing checks in JSON format. Default value is "checks.json"')
+    parser.add_argument('-f', '--fix', action='store_true',
+                        help='Run in fixing/interactive mode. '
+                             'Program will be run with one thread only and will ask for confirmations')
+    parser.add_argument('--password-file', default='osm-password',
+                        help='Filename of the file containing username and password for OSM.'
+                             'Should contain one line in format: '
+                             '<your_osm_mail>:<password>. Default value is "osm-password"')
+    parser.add_argument('--changeset-size', metavar='N', default=20,
+                        help='Number of changes in OSM after they are submitted to OSM. Default is 20.')
+    parser.add_argument('-nr', '--no-report', action='store_true',
+                        help='Do not create final HTML report. Default is to create report.')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Dry run mode. Do all the checks and get data, but never commit to OSM')
+    parser.add_argument('-v', '--version', action='version', version='Serbian OSM Lint 0.1')
+
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.password_file):
+        error_msg = 'File {0} is missing. You need to create it and write in it <your_osm_mail>:<your_osm_password> '\
+                    'for Serbian OSM Lint to function.'.format(args.password_file)
+        parser.error(error_msg)
+
+    if not os.path.isfile(args.maps_file):
+        error_msg = 'File with maps {0} is missing. You need to specify JSON file where maps are'.format(
+            args.maps_file)
+        parser.error(error_msg)
+    with open(args.maps_file) as f:
+        try:
+            maps = simplejson.load(f)
+        except Exception as e:
+            parser.error('Error during parsing of {}: \n{}'.format(args.maps_file, e))
+
+    if not os.path.isfile(args.checks_file):
+        error_msg = 'File with checks {0} is missing. You need to specify JSON file where checks are'.format(
+            args.checks_file)
+        parser.error(error_msg)
+    with open(args.checks_file) as f:
+        try:
+            checks = simplejson.load(f)
+        except Exception as e:
+            parser.error('Error during parsing of {}: \n{}'.format(args.checks_file, e))
+
+    api = osmapi.OsmApi(passwordfile=args.password_file,
+                        changesetauto=not args.dry_run, changesetautosize=args.changeset_size, changesetautotags=
+                        {u"comment": u"Serbian lint bot. Various fixes around name:sr, name:sr-Latn and "
+                                     u"wikidata/wikipedia links",
+                         u"tag": u"mechanical=yes"})
+
+    global_context = {'checks': checks,
+                      'maps': maps,
+                      'report': not args.no_report,
+                      'fix': args.fix,
+                      'dry_run': args.dry_run,
+                      'api': api,
+                      'report_filename': args.output_file}
+    return global_context
+
+
 def main():
+    global_context = create_global_context()
+
     all_futures = []
     thread_count = 1 if global_context['fix'] else multiprocessing.cpu_count()
     thread_count = min(thread_count, len(global_context['maps']))
     logger.info('Using %d threads to do work', thread_count)
 
-    # If we are fixing stuff, we cannot use ProcessPoolExecutor since threads areinteracting with user
+    # If we are fixing stuff, we cannot use ProcessPoolExecutor since threads are interacting with user
     executor_cls = ThreadPoolExecutor if global_context['fix'] else ProcessPoolExecutor
     with executor_cls(max_workers=thread_count) as executor:
         for map_name in global_context['maps']:

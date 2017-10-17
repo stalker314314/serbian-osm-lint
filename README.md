@@ -50,9 +50,18 @@ fallback PBF reader._
 
 2. Open src/configuration.py and adopt as necessary. Default configuration is for reporting.
 
-3. From root directory, run:
+3. From root directory, just run and you will get HTML report in `report.html` at the end:
 
         python src/main.py
+
+    Running with fixing fixable LINT errors (but without actual committing to OSM),
+and with report HTML outputted to foo.html:
+
+        python src/main.py --fix --dry-run -o foo.html
+
+    For list of all options, run with -h:
+
+        python src/main.py -h
 
 List of checks
 --------------

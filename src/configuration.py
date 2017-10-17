@@ -21,7 +21,11 @@ _checks = [
 
 # List of all maps that Serbian OSM Lint will check (in the format "common name"-> URI)
 _maps = {
+    'Albania': 'https://download.geofabrik.de/europe/albania-latest.osm.pbf',
+    'Andorra': 'https://download.geofabrik.de/europe/andorra-latest.osm.pbf',
     'Austria': 'https://download.geofabrik.de/europe/austria-latest.osm.pbf',
+    'Belarus': 'https://download.geofabrik.de/europe/belarus-latest.osm.pbf',
+    'Belgium': 'https://download.geofabrik.de/europe/belgium-latest.osm.pbf',
     'Bosnia-Herzegovina': 'https://download.geofabrik.de/europe/bosnia-herzegovina-latest.osm.pbf',
     'Bulgaria': 'https://download.geofabrik.de/europe/bulgaria-latest.osm.pbf',
     'Croatia': 'https://download.geofabrik.de/europe/croatia-latest.osm.pbf',

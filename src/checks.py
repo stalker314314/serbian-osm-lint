@@ -76,8 +76,8 @@ class NameMissingCheck(AbstractCheck):
         super(NameMissingCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
-        if 'name' not in entity.tags:
-            place_type = entity.tags['place']
+        if 'name' not in entity.tags or not entity.tags['name']:
+            place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'
             return 'Name missing for {0} with id {1}: {2}'.format(place_type, entity.id, entity)
         return ''
 
@@ -93,15 +93,15 @@ class NameCyrillicCheck(AbstractCheck):
         super(NameCyrillicCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
-        if self.map == 'Serbia' and 'name' in entity.tags:
+        if self.map == 'Serbia' and 'name' in entity.tags and entity.tags['name']:
             name = entity.tags['name']
-        elif self.map != 'Serbia' and 'name:sr' in entity.tags:
+        elif self.map != 'Serbia' and 'name:sr' in entity.tags and entity.tags['name:sr']:
             name = entity.tags['name:sr']
         else:
             return ''
 
         if not at_least_some_in_cyrillic(name):
-            place_type = entity.tags['place']
+            place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'
             return 'Seems that {0} name is not in cyrillic for "{1}"'.format(place_type, name)
         return ''
 

@@ -12,7 +12,7 @@ class OsmLintEntity(object):
         else:
             self.tags = {}
             for tag in entity.tags:
-                self.tags[tag.k, tag.v]
+                self.tags[tag.k] = tag.v
         self.entity_type = self._get_entity_type(entity)
 
     @staticmethod

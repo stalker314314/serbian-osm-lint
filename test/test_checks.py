@@ -4,7 +4,7 @@ import unittest
 
 from osmread import Node
 
-from checks import NameMissingCheck, NameCyrillicCheck
+from checks import NameMissingCheck, NameCyrillicCheck, LatinNameExistsCheck
 
 
 class AbstractTestCheck(unittest.TestCase):
@@ -51,9 +51,6 @@ class TestNameCyrillicCheck(AbstractTestCheck):
         # If name is cyrillic, do not fail
         node.tags['name'] = 'фоо'
         self.assertTrue(NameCyrillicCheck(self.default_context).do_check(node) == '')
-        # But if name is undecidable, do not fail
-        node.tags['name'] = '123'
-        self.assertTrue(NameCyrillicCheck(self.default_context).do_check(node) == '')
 
     def test_name_cyrillic_check_other_country(self):
         context = self.default_context.copy()
@@ -71,10 +68,67 @@ class TestNameCyrillicCheck(AbstractTestCheck):
         # If name is cyrillic, do not fail
         node.tags['name:sr'] = 'фоо'
         self.assertTrue(NameCyrillicCheck(context).do_check(node) == '')
-        # But if name is undecidable, do not fail
-        node.tags['name:sr'] = '123'
-        self.assertTrue(NameCyrillicCheck(context).do_check(node) == '')
 
+
+class TestLatinNameExistsCheck(AbstractTestCheck):
+    def __init__(self, *args, **kwargs):
+        super(TestLatinNameExistsCheck, self).__init__(*args, **kwargs)
+
+    def test_latin_name_missing_check_serbia(self):
+        node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
+        # If name does not exists, it is error
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        # If name exists, but is None, it is error
+        node.tags['name:sr-Latn'] = None
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        # If name exists, but is empty, it is error
+        node.tags['name:sr-Latn'] = ''
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        # Name exists, no error
+        node.tags['name:sr-Latn'] = 'foo'
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+        # Name exists in cyrillic, no error (because this is not what this check checks)
+        node.tags['name:sr-Latn'] = 'фоо'
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+
+    def test_latin_name_missing_check_other_country_no_sr_name(self):
+        context = self.default_context.copy()
+        context['global_context']['map'] = 'Atlantida'
+        node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
+        # If name does not exists, but there is no name:sr, it is not error
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+        # If name exists, is None, but there is no name:sr, it is not error
+        node.tags['name:sr-Latn'] = None
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+        # If name exists, is empty, but there is no name:sr, it is not error
+        node.tags['name:sr-Latn'] = ''
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+        # Name exists, no error
+        node.tags['name:sr-Latn'] = 'foo'
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+        # Name exists in cyrillic, no error (because this is not what this check checks)
+        node.tags['name:sr-Latn'] = 'фоо'
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+
+    def test_latin_name_missing_check_other_country_with_sr_name(self):
+        context = self.default_context.copy()
+        context['global_context']['map'] = 'Atlantida'
+        node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
+        node.tags['name:sr'] = 'фоо'
+        # If name does not exists, it is error
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        # If name exists, but is None, it is error
+        node.tags['name:sr-Latn'] = None
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        # If name exists, but is empty, it is error
+        node.tags['name:sr-Latn'] = ''
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        # Name exists, no error
+        node.tags['name:sr-Latn'] = 'foo'
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+        # Name exists in cyrillic, no error (because this is not what this check checks)
+        node.tags['name:sr-Latn'] = 'фоо'
+        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
 
 if __name__ == '__main__':
     unittest.main()

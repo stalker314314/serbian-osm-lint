@@ -118,12 +118,18 @@ class LatinNameExistsCheck(AbstractCheck):
         super(LatinNameExistsCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
-        if (self.map == 'Serbia' and 'name:sr-Latn' not in entity.tags) or\
-                (self.map != 'Serbia' and 'name:sr' in entity.tags and 'name:sr-Latn' not in entity.tags):
-            place_type = entity.tags['place']
-            name = entity.tags['name'] if 'name' in entity.tags else entity.id
-            return 'Latin name missing for {0} {1}'.format(place_type, name)
-        return ''
+        if self.map == 'Serbia' and 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
+            return ''
+        if self.map != 'Serbia' and 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
+            return ''
+        if self.map != 'Serbia' and 'name:sr' not in entity.tags:
+            # If there is no name in cyrillic, no way we can deduce sr-Latn name. Let it alone, there
+            # are other checks (for cyrillic name existance) that will catch this entity
+            return ''
+
+        place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'
+        name = entity.tags['name'] if 'name' in entity.tags else entity.id
+        return 'Latin name missing for {0} {1}'.format(place_type, name)
 
     def fix(self, entity, api):
         if self.map == 'Serbia':

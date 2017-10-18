@@ -14,7 +14,7 @@
                 <div id="bodyColumn" class="span10">
                     <div class="section">
                         <h2>Serbian OSM lint report for {{ d.strftime('%d.%m.%Y.') }}</h2>
-                        <p>The following document contains the results of <a class="externalLink" href="http://checkstyle.sourceforge.net/">Serbian OSM lint</a></p>
+                        <p>The following document contains the results of <a class="externalLink" href="https://wiki.openstreetmap.org/wiki/Automated_edits/Serbian-OSM-Lint">Serbian OSM lint</a>.</p>
                     </div>
                     <div class="section">
                         <h2><a name="Summary"></a>Summary</h2>
@@ -84,7 +84,7 @@
                         <h2><a name="Errors"></a>Errors</h2>
                         {% for map_name, map_check in all_checks.items() %}
                         <div class="section">
-                            <h3 id="Serbia">{{ map_name }}</h3>
+                            <h3 id="{{ map_name }}">{{ map_name }}</h3>
                             <table class="table table-striped" border="0">
                                 <tbody>
                                     <tr class="a">

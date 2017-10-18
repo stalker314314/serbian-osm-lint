@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import collections
 import datetime
 import logging
 import multiprocessing
@@ -91,6 +92,7 @@ def generate_report(context, all_checks):
         count_total_errors = count_total_errors + count_map_errors
         count_total_fixable_errors = count_total_fixable_errors + count_map_fixable_errors
 
+    countries = sorted(countries, key=lambda country: country[0])
     summary = {
         'maps': len(all_checks),
         'count_total_checks': count_total_checks,
@@ -112,8 +114,16 @@ def generate_report(context, all_checks):
                 if check['result'] != Result.CHECKED_OK:
                     check_types[type_check]['count_total_errors'] = check_types[type_check]['count_total_errors'] + 1
 
+    check_types = collections.OrderedDict(sorted(check_types.items(), key=lambda c: c[0]))
+
+    # Sort all checks by country (and sort all values which are also dictionaries by entity id)
+    all_checks_sorted = {}
+    for check, check_dict in all_checks.items():
+        all_checks_sorted[check] = collections.OrderedDict(sorted(check_dict.items(), key=lambda c: c[0]))
+    all_checks_sorted = collections.OrderedDict(sorted(all_checks_sorted.items(), key=lambda c: c[0]))
+
     output = template.render(d=datetime.datetime.now(), summary=summary, countries=countries, check_types=check_types,
-                             all_checks=all_checks)
+                             all_checks=all_checks_sorted)
     with open(context['report_filename'], 'w', encoding='utf-8') as fh:
         fh.write(output)
 

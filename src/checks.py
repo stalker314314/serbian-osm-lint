@@ -185,7 +185,7 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
         latin_name = entity.tags['name:sr-Latn']
         cyrillic_name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
         if cyr2lat(cyrillic_name) != latin_name:
-            place_type = entity.tags['place']
+            place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'
             return 'Latin name {0} for {1} {2} is not properly transliterated'.format(
                 latin_name, place_type, cyrillic_name)
         return ''

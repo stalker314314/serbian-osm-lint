@@ -4,7 +4,7 @@ import unittest
 
 from osmread import Node
 
-from checks import NameMissingCheck, NameCyrillicCheck, LatinNameExistsCheck
+from checks import NameMissingCheck, NameCyrillicCheck, LatinNameExistsCheck, LatinNameSameAsCyrillicCheck
 
 
 class AbstractTestCheck(unittest.TestCase):
@@ -116,19 +116,44 @@ class TestLatinNameExistsCheck(AbstractTestCheck):
         node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
         node.tags['name:sr'] = 'фоо'
         # If name does not exists, it is error
-        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        self.assertTrue(LatinNameExistsCheck(context).do_check(node) != '')
         # If name exists, but is None, it is error
         node.tags['name:sr-Latn'] = None
-        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        self.assertTrue(LatinNameExistsCheck(context).do_check(node) != '')
         # If name exists, but is empty, it is error
         node.tags['name:sr-Latn'] = ''
-        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) != '')
+        self.assertTrue(LatinNameExistsCheck(context).do_check(node) != '')
         # Name exists, no error
         node.tags['name:sr-Latn'] = 'foo'
-        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+        self.assertTrue(LatinNameExistsCheck(context).do_check(node) == '')
         # Name exists in cyrillic, no error (because this is not what this check checks)
         node.tags['name:sr-Latn'] = 'фоо'
-        self.assertTrue(LatinNameExistsCheck(self.default_context).do_check(node) == '')
+        self.assertTrue(LatinNameExistsCheck(context).do_check(node) == '')
+
+
+class TestLatinNameSameAsCyrillicCheck(AbstractTestCheck):
+    def __init__(self, *args, **kwargs):
+        super(TestLatinNameSameAsCyrillicCheck, self).__init__(*args, **kwargs)
+
+    def test_latin_name_same_as_cyrillic_check_serbia(self):
+        context = self.default_context.copy()
+        node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
+        node.tags['name'] = 'фоо'
+        node.tags['name:sr-Latn'] = 'foo'
+        self.assertTrue(LatinNameSameAsCyrillicCheck(self.default_context).do_check(node) == '')
+        node.tags['name:sr-Latn'] = 'foo2'
+        self.assertTrue(LatinNameSameAsCyrillicCheck(self.default_context).do_check(node) != '')
+
+
+    def test_latin_name_same_as_cyrillic_check_other_country(self):
+        context = self.default_context.copy()
+        context['global_context']['map'] = 'Atlantida'
+        node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
+        node.tags['name:sr'] = 'фоо'
+        node.tags['name:sr-Latn'] = 'foo'
+        self.assertTrue(LatinNameSameAsCyrillicCheck(context).do_check(node) == '')
+        node.tags['name:sr-Latn'] = 'foo2'
+        self.assertTrue(LatinNameSameAsCyrillicCheck(context).do_check(node) != '')
 
 if __name__ == '__main__':
     unittest.main()

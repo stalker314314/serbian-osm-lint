@@ -6,4 +6,4 @@ pywikibot==3.0.20170801
 requests==2.18.4
 urllib3==1.22
 osmium==2.13.0
-simplejson=3.11.1
+simplejson==3.11.1

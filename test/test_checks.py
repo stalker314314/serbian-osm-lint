@@ -5,6 +5,7 @@ import unittest
 from osmread import Node
 
 from checks import NameMissingCheck, NameCyrillicCheck, LatinNameExistsCheck, LatinNameSameAsCyrillicCheck
+from checks import LatinNameNotInCyrillicCheck
 
 
 class AbstractTestCheck(unittest.TestCase):
@@ -136,14 +137,12 @@ class TestLatinNameSameAsCyrillicCheck(AbstractTestCheck):
         super(TestLatinNameSameAsCyrillicCheck, self).__init__(*args, **kwargs)
 
     def test_latin_name_same_as_cyrillic_check_serbia(self):
-        context = self.default_context.copy()
         node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
         node.tags['name'] = 'фоо'
         node.tags['name:sr-Latn'] = 'foo'
         self.assertTrue(LatinNameSameAsCyrillicCheck(self.default_context).do_check(node) == '')
         node.tags['name:sr-Latn'] = 'foo2'
         self.assertTrue(LatinNameSameAsCyrillicCheck(self.default_context).do_check(node) != '')
-
 
     def test_latin_name_same_as_cyrillic_check_other_country(self):
         context = self.default_context.copy()
@@ -154,6 +153,22 @@ class TestLatinNameSameAsCyrillicCheck(AbstractTestCheck):
         self.assertTrue(LatinNameSameAsCyrillicCheck(context).do_check(node) == '')
         node.tags['name:sr-Latn'] = 'foo2'
         self.assertTrue(LatinNameSameAsCyrillicCheck(context).do_check(node) != '')
+
+
+class TestLatinNameNotInCyrillicCheck(AbstractTestCheck):
+    def __init__(self, *args, **kwargs):
+        super(TestLatinNameNotInCyrillicCheck, self).__init__(*args, **kwargs)
+
+    def test_latin_name_not_in_cyrillic_check(self):
+        node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
+        self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) == '')
+        node.tags['name:sr-Latn'] = ''
+        self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) == '')
+        node.tags['name:sr-Latn'] = 'foo'
+        self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) == '')
+        node.tags['name:sr-Latn'] = 'фоо'
+        self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) != '')
+
 
 if __name__ == '__main__':
     unittest.main()

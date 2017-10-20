@@ -234,7 +234,7 @@ class LatinNameNotInCyrillicCheck(AbstractCheck):
 
     def do_check(self, entity):
         if 'name:sr-Latn' in entity.tags and at_least_some_in_cyrillic(entity.tags['name:sr-Latn']):
-            place_type = entity.tags['place']
+            place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
             return 'There is cyrillic in {0} name {1} for latin version {2}'.format(
                 place_type, name, entity.tags['name:sr-Latn'])

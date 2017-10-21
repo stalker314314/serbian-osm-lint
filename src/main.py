@@ -167,8 +167,9 @@ def process_map(context, map_name):
             logger.error('[%s] Didn\'t found any library for reading maps, quitting', map_name)
     except Exception as e:
         logger.exception(e)
-        os.remove(filename)
         raise
+    finally:
+        os.remove(filename)
 
 
 def process_map_with_osmread(context, filename):
@@ -308,8 +309,16 @@ def create_global_context():
         except Exception as e:
             parser.error('Error during parsing of {}: \n{}'.format(args.checks_file, e))
 
+    try:
+        changeset_size = int(args.changeset_size)
+    except ValueError:
+        parser.error('--changeset_size must be integer')
+
+    if changeset_size <= 0:
+        parser.error('--changeset_size must be greater than 0')
+
     api = osmapi.OsmApi(passwordfile=args.password_file,
-                        changesetauto=not args.dry_run, changesetautosize=args.changeset_size, changesetautotags=
+                        changesetauto=not args.dry_run, changesetautosize=changeset_size, changesetautotags=
                         {u"comment": u"Serbian lint bot. Various fixes around name:sr, name:sr-Latn and "
                                      u"wikidata/wikipedia links",
                          u"tag": u"mechanical=yes"})

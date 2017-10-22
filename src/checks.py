@@ -286,7 +286,8 @@ class WikipediaEntryExistsCheck(AbstractCheck):
         templates = page.raw_extracted_templates
         residental_place_box = next((t[1] for t in templates if t[0] == 'Насељено место у Србији'), None)
         if not residental_place_box:
-            ambiguous_page =next((t[1] for t in templates if t[0] == 'Вишезначна одредница'), None)
+            ambiguous_page = next(
+                (t[1] for t in templates if t[0] == 'Вишезначна одредница' or t[0] == 'вишезначна одредница'), None)
             if ambiguous_page is None:
                 logger.debug('Wikipedia entry for %s is not entry for residential area', name)
                 return None

@@ -1,4 +1,19 @@
 {
-
-    "Serbia": "https://download.geofabrik.de/europe/serbia-latest.osm.pbf"
+    "Albania": "https://download.geofabrik.de/europe/albania-latest.osm.pbf",
+    "Andorra": "https://download.geofabrik.de/europe/andorra-latest.osm.pbf",
+    "Austria": "https://download.geofabrik.de/europe/austria-latest.osm.pbf",
+    "Belarus": "https://download.geofabrik.de/europe/belarus-latest.osm.pbf",
+    "Belgium": "https://download.geofabrik.de/europe/belgium-latest.osm.pbf",
+    "Bosnia-Herzegovina": "https://download.geofabrik.de/europe/bosnia-herzegovina-latest.osm.pbf",
+    "Bulgaria": "https://download.geofabrik.de/europe/bulgaria-latest.osm.pbf",
+    "Croatia": "https://download.geofabrik.de/europe/croatia-latest.osm.pbf",
+    "Cyprus": "https://download.geofabrik.de/europe/cyprus-latest.osm.pbf",
+    "Chech Republic": "https://download.geofabrik.de/europe/czech-republic-latest.osm.pbf",
+    "Denmark": "https://download.geofabrik.de/europe/denmark-latest.osm.pbf",
+    "Estonia": "https://download.geofabrik.de/europe/estonia-latest.osm.pbf",
+    "Finland": "https://download.geofabrik.de/europe/finland-latest.osm.pbf",
+    "Greece": "https://download.geofabrik.de/europe/greece-latest.osm.pbf",
+    "Hungary": "https://download.geofabrik.de/europe/hungary-latest.osm.pbf",
+    "Serbia": "https://download.geofabrik.de/europe/serbia-latest.osm.pbf",
+    "Macedonia": "https://download.geofabrik.de/europe/macedonia-latest.osm.pbf"
 }

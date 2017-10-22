@@ -288,11 +288,11 @@ class WikipediaEntryExistsCheck(AbstractCheck):
         if not residental_place_box:
             ambiguous_page =next((t[1] for t in templates if t[0] == 'Вишезначна одредница'), None)
             if ambiguous_page is None:
-                logger.debug('Wikipedia entry for {} is not entry for residential area', name)
+                logger.debug('Wikipedia entry for %s is not entry for residential area', name)
                 return None
             else:
                 # This is ambiguous page, let's try calling all links from there recursively
-                logger.debug('Wikipedia entry {} is ambiguous page, going into pages it is linking to', name)
+                logger.debug('Wikipedia entry %s is ambiguous page, going into pages it is linking to', name)
                 for page in page.linkedPages():
                     result = self._guess_from_wikipedia(page.title(), entity, api, depth+1)
                     if result:
@@ -302,7 +302,7 @@ class WikipediaEntryExistsCheck(AbstractCheck):
         # It is about residential place, let's see how apart are Wiki and OSM place,
         # if they are not too far apart (5km), it means we have a winner!
         if 'гшир' not in residental_place_box or 'гдуж' not in residental_place_box:
-            logger.debug('Wikipedia entry {} is missing latitude or longitude', name)
+            logger.debug('Wikipedia entry %s is missing latitude or longitude', name)
             return None
 
         wiki_point = (float(residental_place_box['гшир']), float(residental_place_box['гдуж']))
@@ -312,12 +312,12 @@ class WikipediaEntryExistsCheck(AbstractCheck):
             osm_entity = api.NodeGet(entity.id)
 
         if 'lat' not in osm_entity or 'lon' not in osm_entity:
-            logger.debug('OSM entity {} is missing latitude or longitude?', name)
+            logger.debug('OSM entity %s is missing latitude or longitude?', name)
             return None
 
         osm_point = (osm_entity['lat'], osm_entity['lon'])
         if haversine(wiki_point, osm_point) > 5:  # more than 5km
-            logger.debug('Wikipedia and OSM entries are more than 5km apart for place {}.', name)
+            logger.debug('Wikipedia and OSM entries are more than 5km apart for place %s.', name)
             return None
         return name
 
@@ -362,19 +362,19 @@ class WikipediaEntryExistsCheck(AbstractCheck):
         name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
         page = pywikibot.Page(sr_wiki, name)
         if page.pageid == 0:
-            logger.debug('Wikipedia entry for {} does not exist', name)
+            logger.debug('Wikipedia entry for %s does not exist', name)
             return None
         # Seems that there is a wikipedia entry by this name, let's see if it is about residential place
         templates = page.raw_extracted_templates
         residental_place_box = next((t[1] for t in templates if t[0] == 'Насељено место у Србији'), None)
         if not residental_place_box:
-            logger.debug('Wikipedia entry for {} is not entry for residential area', name)
+            logger.debug('Wikipedia entry for %s is not entry for residential area', name)
             return None
 
         # It is about residential place, let's see how apart are Wiki and OSM place,
         # if they are not too far apart (5km), it means we have a winner!
         if 'гшир' not in residental_place_box or 'гдуж' not in residental_place_box:
-            logger.debug('Wikipedia entry {} is missing latitude or longitude', name)
+            logger.debug('Wikipedia entry %s is missing latitude or longitude', name)
             return None
 
         wiki_point = (float(residental_place_box['гшир']), float(residental_place_box['гдуж']))
@@ -384,12 +384,12 @@ class WikipediaEntryExistsCheck(AbstractCheck):
             osm_entity = api.NodeGet(entity.id)
 
         if 'lat' not in osm_entity or 'lon' not in osm_entity:
-            logger.debug('OSM entity {} is missing latitude or longitude?', name)
+            logger.debug('OSM entity %s is missing latitude or longitude?', name)
             return None
 
         osm_point = (osm_entity['lat'], osm_entity['lon'])
         if haversine(wiki_point, osm_point) > 5:  # more than 5km
-            logger.debug('Wikipedia and OSM entries are more than 5km apart for place {}.', name)
+            logger.debug('Wikipedia and OSM entries are more than 5km apart for place %s.', name)
             return None
         return name
 

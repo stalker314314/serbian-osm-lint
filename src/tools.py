@@ -11,7 +11,8 @@ def setup_logger(logging_level=logging.INFO):
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    ch = logging.handlers.TimedRotatingFileHandler(filename='serbian-osm-lint.log', when='midnight', interval=1)
+    ch = logging.handlers.TimedRotatingFileHandler(filename='serbian-osm-lint.log', when='midnight', interval=1,
+                                                   encoding='utf-8')
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(formatter)
     logger.addHandler(ch)

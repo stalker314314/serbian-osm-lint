@@ -175,7 +175,7 @@ class LatinNameExistsCheck(AbstractCheck):
     Checks that for entity exists name in sr-Latn too.
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['*']
+    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):
@@ -239,7 +239,7 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
     """
     depends_on = [NameMissingCheck, NameCyrillicCheck, LatinNameExistsCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['*']
+    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):
@@ -291,7 +291,7 @@ class LatinNameNotInCyrillicCheck(AbstractCheck):
     """
     depends_on = [NameMissingCheck, LatinNameExistsCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['*']
+    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(LatinNameNotInCyrillicCheck, self).__init__(entity_context)

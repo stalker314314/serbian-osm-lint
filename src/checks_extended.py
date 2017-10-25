@@ -17,6 +17,9 @@ class RemoveLatinName(AbstractCheck):
     is_fixable = True
     explanation = 'Removes name:sr-Latn tag'
 
+    def __init__(self, entity_context):
+        super(RemoveLatinName, self).__init__(entity_context)
+
     def do_check(self, entity):
         if 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
             place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'

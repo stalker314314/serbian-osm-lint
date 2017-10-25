@@ -7,9 +7,11 @@ import logging
 import multiprocessing
 
 # DO NOT REMOVE, needed to import it, so we can query __doc__ from those checks
-import checks
+import checks, checks_extended
 
-_ = checks.AbstractCheck  # Just so lint is not complaining on unused import
+# Just so lint is not complaining on unused import
+_ = checks.AbstractCheck
+_ = checks_extended.AbstractCheck
 
 import os
 import tempfile
@@ -106,7 +108,7 @@ def generate_report(context, all_checks):
         for entity_check in map_check.values():
             for type_check, check in entity_check[2].items():
                 if type_check not in check_types:
-                    type_check_cls = eval('checks.' + type_check)
+                    type_check_cls = eval(type_check)
                     check_types[type_check] = {'explanation': type_check_cls.__doc__.strip(),
                                                'count_total_checks': 0,
                                                'count_total_errors': 0}

@@ -53,7 +53,7 @@ class CheckEngine(object):
         while True:
             processed_any_cls = None
             for check_cls in self.check_classes:
-                check_cls_name = check_cls.__name__
+                check_cls_name = '{0}.{1}'.format(check_cls.__module__, check_cls.__name__)
 
                 # Test if we do check this on this entity
                 if not any(a for a in check_cls.applicable_on if a.is_entity_applicable(self.entity)):
@@ -88,7 +88,7 @@ class CheckEngine(object):
                 # Test if all dependency are satisfied
                 satisfied = True
                 for dc_cls in check_cls.depends_on:
-                    dc_cls_name = dc_cls.__name__
+                    dc_cls_name = '{0}.{1}'.format(dc_cls.__module__, dc_cls.__name__)
                     if dc_cls_name in entity_context['checks']:
                         result = entity_context['checks'][dc_cls_name]['result']
                         if result != Result.CHECKED_OK:

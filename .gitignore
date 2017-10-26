@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # serbian-osm-lint.log logs
-serbian-osm-lint-*.log
+serbian-osm-lint.log.*
 serbian_osm_lint.log
 
 # pywikibot cache
@@ -60,6 +60,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+cover/
 .hypothesis/
 
 # Translations

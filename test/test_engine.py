@@ -27,6 +27,15 @@ class TestEngine(unittest.TestCase):
         self.entity = Way(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, nodes=[])
         self.default_global_context = {'fix': False, 'map': 'Serbia', 'dry_run': True}
 
+    def assertCheckInResults(self, results, cls):
+        full_check_name = '{0}.{1}'.format(cls.__module__, cls.__name__)
+        self.assertTrue(full_check_name in results)
+
+    @staticmethod
+    def getCheckFromResults(results, cls):
+        full_check_name = '{0}.{1}'.format(cls.__module__, cls.__name__)
+        return results[full_check_name]
+
     def test_empty_engine(self):
         engine = CheckEngine([], self.entity, self.default_global_context)
         with patch.object(CheckEngine, 'do_entity_check_and_fix',
@@ -60,8 +69,8 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(OnlyCheck.hit_check, 0)
             self.assertEqual(do_entity_check_and_fix.call_count, 0)
             self.assertEqual(len(results), 1)
-            self.assertTrue(OnlyCheck.__name__ in results)
-            result = results[OnlyCheck.__name__]
+            self.assertCheckInResults(results, OnlyCheck)
+            result = self.getCheckFromResults(results, OnlyCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.NOT_APPLICABLE)
 
@@ -84,8 +93,8 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(do_entity_check_and_fix.call_count, 1)
             self.assertEqual(OnlyCheck.hit_check, 1)
             self.assertEqual(len(results), 1)
-            self.assertTrue(OnlyCheck.__name__ in results)
-            result = results[OnlyCheck.__name__]
+            self.assertCheckInResults(results, OnlyCheck)
+            result = self.getCheckFromResults(results, OnlyCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.CHECKED_OK)
 
@@ -135,14 +144,14 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(DependentCheck.hit_check, 0)
             self.assertEqual(do_entity_check_and_fix.call_count, 0)
             self.assertEqual(len(results), 2)
-            self.assertTrue(IndependentCheck.__name__ in results)
-            self.assertTrue(DependentCheck.__name__ in results)
+            self.assertCheckInResults(results, IndependentCheck)
+            self.assertCheckInResults(results, DependentCheck)
 
-            result = results[IndependentCheck.__name__]
+            result = self.getCheckFromResults(results, IndependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.NOT_APPLICABLE)
 
-            result = results[DependentCheck.__name__]
+            result = self.getCheckFromResults(results, DependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.DEPENDENCY_NOT_SATISFIED)
 
@@ -182,8 +191,8 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(DependentCheck.hit_check, 0)
             self.assertEqual(do_entity_check_and_fix.call_count, 1)
             self.assertEqual(len(results), 1)
-            self.assertTrue(IndependentCheck.__name__ in results)
-            result = results[IndependentCheck.__name__]
+            self.assertCheckInResults(results, IndependentCheck)
+            result = self.getCheckFromResults(results, IndependentCheck)
             self.assertEqual(len(result['messages']), 1)
             self.assertEqual(result['messages'][0], 'Error1')
             self.assertEqual(result['result'], Result.CHECKED_ERROR)
@@ -197,15 +206,15 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(DependentCheck.hit_check, 0)
             self.assertEqual(do_entity_check_and_fix.call_count, 1)
             self.assertEqual(len(results), 2)
-            self.assertTrue(IndependentCheck.__name__ in results)
-            self.assertTrue(DependentCheck.__name__ in results)
+            self.assertCheckInResults(results, IndependentCheck)
+            self.assertCheckInResults(results, DependentCheck)
 
-            result = results[IndependentCheck.__name__]
+            result = self.getCheckFromResults(results, IndependentCheck)
             self.assertEqual(len(result['messages']), 1)
             self.assertEqual(result['messages'][0], 'Error1')
             self.assertEqual(result['result'], Result.CHECKED_ERROR)
 
-            result = results[DependentCheck.__name__]
+            result = self.getCheckFromResults(results, DependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.DEPENDENCY_NOT_SATISFIED)
 
@@ -245,8 +254,8 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(DependentCheck.hit_check, 0)
             self.assertEqual(do_entity_check_and_fix.call_count, 1)
             self.assertEqual(len(results), 1)
-            self.assertTrue(IndependentCheck.__name__ in results)
-            result = results[IndependentCheck.__name__]
+            self.assertCheckInResults(results, IndependentCheck)
+            result = self.getCheckFromResults(results, IndependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.CHECKED_OK)
         # Now again, without filtering checks
@@ -259,14 +268,14 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(DependentCheck.hit_check, 0)
             self.assertEqual(do_entity_check_and_fix.call_count, 1)
             self.assertEqual(len(results), 2)
-            self.assertTrue(IndependentCheck.__name__ in results)
-            self.assertTrue(DependentCheck.__name__ in results)
+            self.assertCheckInResults(results, IndependentCheck)
+            self.assertCheckInResults(results, DependentCheck)
 
-            result = results[IndependentCheck.__name__]
+            result = self.getCheckFromResults(results, IndependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.CHECKED_OK)
 
-            result = results[DependentCheck.__name__]
+            result = self.getCheckFromResults(results, DependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.NOT_APPLICABLE)
 
@@ -308,14 +317,14 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(DependentCheck.hit_check, 1)
             self.assertEqual(do_entity_check_and_fix.call_count, 2)
             self.assertEqual(len(results), 2)
-            self.assertTrue(IndependentCheck.__name__ in results)
-            self.assertTrue(DependentCheck.__name__ in results)
+            self.assertCheckInResults(results, IndependentCheck)
+            self.assertCheckInResults(results, DependentCheck)
 
-            result = results[IndependentCheck.__name__]
+            result = self.getCheckFromResults(results, IndependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.CHECKED_OK)
 
-            result = results[DependentCheck.__name__]
+            result = self.getCheckFromResults(results, DependentCheck)
             self.assertEqual(len(result['messages']), 1)
             self.assertEqual(result['messages'][0], 'Error2')
             self.assertEqual(result['result'], Result.CHECKED_ERROR)
@@ -357,14 +366,14 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(DependentCheck.hit_check, 1)
             self.assertEqual(do_entity_check_and_fix.call_count, 2)
             self.assertEqual(len(results), 2)
-            self.assertTrue(IndependentCheck.__name__ in results)
-            self.assertTrue(DependentCheck.__name__ in results)
+            self.assertCheckInResults(results, IndependentCheck)
+            self.assertCheckInResults(results, DependentCheck)
 
-            result = results[IndependentCheck.__name__]
+            result = self.getCheckFromResults(results, IndependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.CHECKED_OK)
 
-            result = results[DependentCheck.__name__]
+            result = self.getCheckFromResults(results, DependentCheck)
             self.assertEqual(len(result['messages']), 0)
             self.assertEqual(result['result'], Result.CHECKED_OK)
 
@@ -555,14 +564,14 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(CheckH.hit_check, 1)
             self.assertEqual(do_entity_check_and_fix.call_count, 8)
             self.assertEqual(len(results), 8)
-            self.assertTrue(CheckA.__name__ in results)
-            self.assertTrue(CheckB.__name__ in results)
-            self.assertTrue(CheckC.__name__ in results)
-            self.assertTrue(CheckD.__name__ in results)
-            self.assertTrue(CheckE.__name__ in results)
-            self.assertTrue(CheckF.__name__ in results)
-            self.assertTrue(CheckG.__name__ in results)
-            self.assertTrue(CheckH.__name__ in results)
+            self.assertCheckInResults(results, CheckA)
+            self.assertCheckInResults(results, CheckB)
+            self.assertCheckInResults(results, CheckC)
+            self.assertCheckInResults(results, CheckD)
+            self.assertCheckInResults(results, CheckE)
+            self.assertCheckInResults(results, CheckF)
+            self.assertCheckInResults(results, CheckG)
+            self.assertCheckInResults(results, CheckH)
 
             for result in results.values():
                 self.assertEqual(len(result['messages']), 0)

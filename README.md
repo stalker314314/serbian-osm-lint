@@ -27,7 +27,7 @@ Current results can be seen at:
 
 http://kokanovic.org/serbian-osm-lint
 
-If it is not daily updated there, contact me!
+If it is not updated for 3 days, contact me!
 
 [This is OSM user](https://www.openstreetmap.org/user/Serbian%20OSM%20Lint%20bot)
 that this script can be seen running live.

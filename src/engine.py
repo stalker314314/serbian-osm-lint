@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
+from osmapi.OsmApi import ElementDeletedApiError
 
 import tools
 
@@ -36,7 +37,12 @@ class CheckEngine(object):
         message = check.do_check(entity)
         if message != '': # OK, check is erroneous, let's see if we can perform fix
             if check.entity_context['global_context']['fix']:
-                message_fixed = check.fix(entity, check.entity_context['global_context']['api'])
+                message_fixed = ''
+                try:
+                    message_fixed = check.fix(entity, check.entity_context['global_context']['api'])
+                except ElementDeletedApiError as e:
+                    # This can happen during fixing, just ignore and continue
+                    logger.exception(e)
                 if message_fixed != '':
                     logger.debug('[%s] %s', check.entity_context['global_context']['map'], message_fixed)
         return message

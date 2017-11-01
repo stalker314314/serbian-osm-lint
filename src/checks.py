@@ -15,7 +15,7 @@ wiki_repo = wikidata.data_repository()
 logger = tools.get_logger(__name__)
 
 
-def _guess_from_wikipedia(name, entity, api, depth=1):
+def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, depth=1):
     """
     Try to get article from Serbian Wikipedia with given name and check if it is proper article for a given entity.
     Article needs to fulfil couple of criterias:
@@ -29,39 +29,64 @@ def _guess_from_wikipedia(name, entity, api, depth=1):
     :param entity: Entity to get wikipedia link for
     :return: Full link name, or None if it is not guessed correctly
     """
-    if depth > 2:
+    if visited_pages is None:
+        visited_pages = []
+
+    if name in visited_pages:
+        # We already checked this page, bail out
+        return None
+    visited_pages.append(name)
+
+    if depth > 3:
         # We are too much in recursion, bail out
         return None
 
     page = pywikibot.Page(sr_wiki, name)
-    if page.pageid == 0:
-        logger.debug('Wikipedia entry for %s does not exist', name)
+    try:
+        if page.pageid == 0:
+            logger.debug('Wikipedia entry for %s does not exist', name)
+            return None
+    except pywikibot.exceptions.InvalidTitle as e:
+        logger.exception(e)
         return None
+
     # Seems that there is a wikipedia entry by this name, let's see if it is about residential place
     templates = page.raw_extracted_templates
-    residental_place_box = next((t[1] for t in templates if t[0] == 'Насељено место у Србији'), None)
-    if not residental_place_box:
+    found_box = next((t[1] for t in templates if t[0] in valid_boxes), None)
+    if not found_box:
         ambiguous_page = next(
             (t[1] for t in templates if t[0] == 'Вишезначна одредница' or t[0] == 'вишезначна одредница'), None)
         if ambiguous_page is None:
-            logger.debug('Wikipedia entry for %s is not entry for residential area', name)
-            return None
+            other_meanings = [t[1] for t in templates if t[0].startswith('Друго значење')]
+            if len(other_meanings) == 0:
+                logger.debug('Wikipedia entry for %s is not entry for residential area', name)
+                return None
+            else:
+                # There is page with more meanings, let's try there
+                for other_meaning in other_meanings:
+                    for l in other_meaning.values():
+                        if l.startswith('[[') and l.endswith(']]'):
+                            l = l[2:-2]
+                        result = _guess_from_wikipedia(l, entity, api, valid_boxes, visited_pages, depth + 1)
+                        if result:
+                            return result
+                return None
         else:
             # This is ambiguous page, let's try calling all links from there recursively
             logger.debug('Wikipedia entry %s is ambiguous page, going into pages it is linking to', name)
             for page in page.linkedPages():
-                result = _guess_from_wikipedia(page.title(), entity, api, depth + 1)
+                result = _guess_from_wikipedia(page.title(), entity, api, valid_boxes, visited_pages, depth + 1)
                 if result:
                     return result
             return None
 
     # It is about residential place, let's see how apart are Wiki and OSM place,
     # if they are not too far apart (5km), it means we have a winner!
-    if 'гшир' not in residental_place_box or 'гдуж' not in residental_place_box:
+    if 'гшир' not in found_box or 'гдуж' not in found_box:
         logger.debug('Wikipedia entry %s is missing latitude or longitude', name)
         return None
 
-    wiki_point = (float(residental_place_box['гшир']), float(residental_place_box['гдуж']))
+    wiki_point = (float(found_box['гшир']), float(found_box['гдуж']))
     if entity.entity_type == 'way':
         osm_entity = api.WayGet(entity.id)
     else:
@@ -332,7 +357,8 @@ class WikipediaEntryExistsCheck(AbstractCheck):
             return ''
 
         name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
-        guess_from_wiki = _guess_from_wikipedia(name, entity, api)
+        guess_from_wiki = _guess_from_wikipedia(name, entity, api,
+                                                ['Насељено место у Србији', 'Град у Србији', 'Градска четврт'])
         if guess_from_wiki:
             if entity.entity_type == 'way':
                 osm_entity = api.WayGet(entity.id)
@@ -388,7 +414,8 @@ class WikipediaEntryIsInSerbianCheck(AbstractCheck):
             return ''
 
         name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
-        guess_from_wiki = _guess_from_wikipedia(name, entity, api)
+        guess_from_wiki = _guess_from_wikipedia(name, entity, api,
+                                                ['Насељено место у Србији', 'Град у Србији', 'Градска четврт'])
         if guess_from_wiki:
             if entity.entity_type == 'way':
                 osm_entity = api.WayGet(entity.id)

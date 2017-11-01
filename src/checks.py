@@ -487,7 +487,8 @@ class WikipediaAndWikidataInSyncCheck(AbstractCheck):
 
     def do_check(self, entity):
         wikidata_entry = self.entity_context['local_store']['wikidata']
-        if wikidata_entry.text['labels']['sr'] != entity.tags['wikipedia'][3:]:
+        wd_txt = wikidata_entry.text
+        if 'labels' in wd_txt and 'sr' in wd_txt['labels'] and wd_txt['labels']['sr'] != entity.tags['wikipedia'][3:]:
             place_type = entity.tags['place']
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
             return 'Wikidata entry {0} for {1} {2} doesn\'t match wikipedia entry ({3})for it'.format(

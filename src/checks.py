@@ -97,8 +97,11 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
         return None
 
     osm_point = (osm_entity['lat'], osm_entity['lon'])
-    if haversine(wiki_point, osm_point) > 5:  # more than 5km
-        logger.debug('Wikipedia and OSM entries are more than 5km apart for place %s.', name)
+    distance = haversine(wiki_point, osm_point)
+    if distance >= 5:  # more than 5km
+        entity_name = entity.tags['name'] if 'name' in entity.tags else entity.id
+        logger.info('Wikipedia and OSM entries are more than 5km apart (%.2f km) for place %s. '
+                    'Wiki point was %s and OSM was %s', distance, entity_name, wiki_point, osm_point)
         return None
     return name
 
@@ -395,6 +398,10 @@ class WikipediaEntryIsInSerbianCheck(AbstractCheck):
         super(WikipediaEntryIsInSerbianCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        # Exclude places close, but not in Serbia
+        if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
+            name = entity.tags['name'] if 'name' in entity.tags else entity.id
+            return ''
         if not entity.tags['wikipedia'].startswith('sr:'):
             place_type = entity.tags['place']
             name = entity.tags['name'] if 'name' in entity.tags else entity.id

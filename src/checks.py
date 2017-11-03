@@ -55,9 +55,9 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
     found_box = next((t[1] for t in templates if t[0] in valid_boxes), None)
     if not found_box:
         ambiguous_page = next(
-            (t[1] for t in templates if t[0] == 'Вишезначна одредница' or t[0] == 'вишезначна одредница'), None)
+            (t[1] for t in templates if t[0].lower() == 'вишезначна одредница'), None)
         if ambiguous_page is None:
-            other_meanings = [t[1] for t in templates if t[0].startswith('Друго значење')]
+            other_meanings = [t[1] for t in templates if t[0].lower().startswith('друго значење')]
             if len(other_meanings) == 0:
                 logger.debug('Wikipedia entry for %s is not entry for residential area', name)
                 return None
@@ -68,6 +68,15 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
                         if l.startswith('[[') and l.endswith(']]'):
                             l = l[2:-2]
                         result = _guess_from_wikipedia(l, entity, api, valid_boxes, visited_pages, depth + 1)
+                        if result:
+                            return result
+                        if '(вишезначна_одредница)' not in l:
+                            result = _guess_from_wikipedia('{0} (вишезначна_одредница)'.format(l), entity, api, valid_boxes, visited_pages, depth + 1)
+                            if result:
+                                return result
+                    else:
+                        result = _guess_from_wikipedia('{0} (вишезначна_одредница)'.format(name), entity, api, valid_boxes,
+                                                       visited_pages, depth + 1)
                         if result:
                             return result
                 return None
@@ -98,7 +107,7 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
 
     osm_point = (osm_entity['lat'], osm_entity['lon'])
     distance = haversine(wiki_point, osm_point)
-    if distance >= 5:  # more than 5km
+    if distance >= 20:  # tolerate less than 20km only
         entity_name = entity.tags['name'] if 'name' in entity.tags else entity.id
         logger.info('Wikipedia and OSM entries are more than 5km apart (%.2f km) for place %s. '
                     'Wiki point was %s and OSM was %s', distance, entity_name, wiki_point, osm_point)
@@ -345,6 +354,11 @@ class WikipediaEntryExistsCheck(AbstractCheck):
         super(WikipediaEntryExistsCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        # Exclude places close, but not in Serbia
+        if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
+            name = entity.tags['name'] if 'name' in entity.tags else entity.id
+            return ''
+
         if 'wikipedia' not in entity.tags:
             place_type = entity.tags['place']
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
@@ -370,7 +384,7 @@ class WikipediaEntryExistsCheck(AbstractCheck):
 
             if 'wikipedia' not in osm_entity['tag']:
                 wikipedia_tag = 'sr:{0}'.format(guess_from_wiki)
-                question = 'Wikipedia entry missing, but was found to be same as place name. ' \
+                question = 'Wikipedia entry missing, but page with most likelihood was found. ' \
                            'Are you sure you want to add tag "wikipedia" for entity "{0}" with value "{1}"'.format(
                             name, wikipedia_tag)
                 if self.ask_confirmation(question, entity):

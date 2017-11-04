@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import pywikibot
+
 import tools
 from applicability import City, Town, Village
+from exceptions import CalculateDistanceException
 from haversine import haversine
-
 from transliteration import at_least_some_in_cyrillic, cyr2lat
 
 en_wiki = pywikibot.Site("en", "wikipedia")
@@ -15,16 +16,44 @@ wiki_repo = wikidata.data_repository()
 logger = tools.get_logger(__name__)
 
 
+def _wiki_osm_distance(wikipedia_entry, valid_boxes, osm_entity):
+    """
+    Calculates distance between wiki entry and OSM entity,
+    or throws CalculateDistanceException if it cannot calculate it.
+    :param wikipedia_entry: Wikipedia entry to calculate distance
+    :param valid_boxes: Template boxes from where latitude/longitude will be pulled from
+    :param osm_entity: OSM entity
+    :return: distance in km
+    """
+    templates = wikipedia_entry.raw_extracted_templates
+    found_box = next((t[1] for t in templates if t[0] in valid_boxes), None)
+    if found_box is None:
+        raise CalculateDistanceException(
+            'Cannot calculate distance as Wikipedia article {0} does not contain any of valid boxes {1}'.format(
+                     wikipedia_entry.title, ','.join(valid_boxes)))
+
+    if 'гшир' not in found_box or 'гдуж' not in found_box:
+        raise CalculateDistanceException('Wikipedia entry {0} is missing latitude or longitude'.format(
+            wikipedia_entry.title))
+
+    wiki_point = (float(found_box['гшир']), float(found_box['гдуж']))
+
+    osm_point = (osm_entity.lat, osm_entity.lon)
+    distance = haversine(wiki_point, osm_point)
+    return distance
+
+
 def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, depth=1):
     """
     Try to get article from Serbian Wikipedia with given name and check if it is proper article for a given entity.
     Article needs to fulfil couple of criterias:
     * It needs to exist:)
-    * It needs to have 'Насељено место у Србији' template (template that each place in Serbia have)
+    * It needs to have at least one of the valid_boxes template (template that each place in Serbia have)
     * Template mentioned above need to have latitude and longitude
     * Latitude and longitude should not differ more than 5km between OSM entity and template
     * If article is leading to ambiguous page (template 'Вишезначна одредница'), we will recursively check all
         links pointing to it.
+    * If article is having 'other meaning' link, it will recursively check that link
     :param name: Name to check on wiki
     :param entity: Entity to get wikipedia link for
     :return: Full link name, or None if it is not guessed correctly
@@ -71,12 +100,13 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
                         if result:
                             return result
                         if '(вишезначна_одредница)' not in l:
-                            result = _guess_from_wikipedia('{0} (вишезначна_одредница)'.format(l), entity, api, valid_boxes, visited_pages, depth + 1)
+                            result = _guess_from_wikipedia('{0} (вишезначна_одредница)'.format(l),
+                                                           entity, api, valid_boxes, visited_pages, depth + 1)
                             if result:
                                 return result
                     else:
-                        result = _guess_from_wikipedia('{0} (вишезначна_одредница)'.format(name), entity, api, valid_boxes,
-                                                       visited_pages, depth + 1)
+                        result = _guess_from_wikipedia('{0} (вишезначна_одредница)'.format(name), entity, api,
+                                                       valid_boxes, visited_pages, depth + 1)
                         if result:
                             return result
                 return None
@@ -91,28 +121,17 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
 
     # It is about residential place, let's see how apart are Wiki and OSM place,
     # if they are not too far apart (5km), it means we have a winner!
-    if 'гшир' not in found_box or 'гдуж' not in found_box:
-        logger.debug('Wikipedia entry %s is missing latitude or longitude', name)
+    try:
+        distance = _wiki_osm_distance(page, valid_boxes, entity)
+        if distance <= 5:
+            return name
+        else:
+            entity_name = entity.tags['name'] if 'name' in entity.tags else entity.id
+            logger.info('Wikipedia and OSM entries are more than 5km apart (%.2f km) for place %s.', distance, entity_name)
+            return None
+    except CalculateDistanceException as e:
+        logger.debug(e.message)
         return None
-
-    wiki_point = (float(found_box['гшир']), float(found_box['гдуж']))
-    if entity.entity_type == 'way':
-        osm_entity = api.WayGet(entity.id)
-    else:
-        osm_entity = api.NodeGet(entity.id)
-
-    if 'lat' not in osm_entity or 'lon' not in osm_entity:
-        logger.debug('OSM entity %s is missing latitude or longitude?', name)
-        return None
-
-    osm_point = (osm_entity['lat'], osm_entity['lon'])
-    distance = haversine(wiki_point, osm_point)
-    if distance >= 20:  # tolerate less than 20km only
-        entity_name = entity.tags['name'] if 'name' in entity.tags else entity.id
-        logger.info('Wikipedia and OSM entries are more than 5km apart (%.2f km) for place %s. '
-                    'Wiki point was %s and OSM was %s', distance, entity_name, wiki_point, osm_point)
-        return None
-    return name
 
 
 class AbstractCheck(object):
@@ -195,6 +214,9 @@ class NameCyrillicCheck(AbstractCheck):
 
     def do_check(self, entity):
         if self.map == 'Serbia' and 'name' in entity.tags and entity.tags['name']:
+            # Exclude places close, but not in Serbia
+            if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
+                return ''
             name = entity.tags['name']
         elif self.map != 'Serbia' and 'name:sr' in entity.tags and entity.tags['name:sr']:
             name = entity.tags['name:sr']
@@ -220,6 +242,9 @@ class LatinNameExistsCheck(AbstractCheck):
 
     def do_check(self, entity):
         if self.map == 'Serbia' and 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
+            # Exclude places close, but not in Serbia
+            if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
+                return ''
             return ''
         if self.map != 'Serbia' and 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
             return ''
@@ -283,6 +308,10 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
         super(LatinNameSameAsCyrillicCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        # Exclude places close, but not in Serbia
+        if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
+            return ''
+
         latin_name = entity.tags['name:sr-Latn']
         cyrillic_name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
         if cyr2lat(cyrillic_name) != latin_name:
@@ -356,7 +385,6 @@ class WikipediaEntryExistsCheck(AbstractCheck):
     def do_check(self, entity):
         # Exclude places close, but not in Serbia
         if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
-            name = entity.tags['name'] if 'name' in entity.tags else entity.id
             return ''
 
         if 'wikipedia' not in entity.tags:
@@ -464,7 +492,7 @@ class WikipediaEntryValidCheck(AbstractCheck):
     """
     Checks that Wikipedia entry for a given entity actually exists in Wikipedia.
     """
-    depends_on = [WikipediaEntryExistsCheck, WikipediaEntryIsInSerbianCheck]
+    depends_on = [NameCyrillicCheck, WikipediaEntryExistsCheck, WikipediaEntryIsInSerbianCheck]
     applicable_on = [City, Town, Village]
     maps_applicable_on = ['Serbia']
 
@@ -472,15 +500,46 @@ class WikipediaEntryValidCheck(AbstractCheck):
         super(WikipediaEntryValidCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
-        page = pywikibot.Page(sr_wiki, entity.tags['wikipedia'][3:])
-        try:
-            pywikibot.ItemPage.fromPage(page)
+        # Exclude places close, but not in Serbia
+        if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
             return ''
+
+        place_type = entity.tags['place']
+        name = entity.tags['name'] if 'name' in entity.tags else entity.id
+
+        if 'wikipedia' not in entity.tags:
+            return 'Wikipedia entry missing for {0} {1} while trying to validate it.'.format(place_type, name)
+
+        wikipedia_entry = self.entity_context['local_store']['wikipedia']\
+            if 'wikipedia' in self.entity_context['local_store'] else None
+
+        if wikipedia_entry is not None:
+            # Already checked, everything is OK
+            return ''
+
+        error_message = 'Wikipedia entry {0} is not valid for {1} {2}'.format(
+            entity.tags['wikipedia'][3:], place_type, name)
+        wikipedia_entry = pywikibot.Page(sr_wiki, entity.tags['wikipedia'][3:])
+        try:
+            if wikipedia_entry.pageid == 0:
+                return error_message
         except pywikibot.exceptions.NoPage:
-            place_type = entity.tags['place']
-            name = entity.tags['name'] if 'name' in entity.tags else entity.id
-            return 'Wikipedia entry {0} does not exist for {1} {2}'.format(
-                entity.tags['wikipedia'][3:], place_type, name)
+            return error_message
+
+        try:
+            distance = _wiki_osm_distance(wikipedia_entry,
+                                          ['Насељено место у Србији', 'Град у Србији', 'Градска четврт'], entity)
+            if distance <= 5:
+                # Cache it now
+                self.entity_context['local_store']['wikipedia'] = wikipedia_entry
+                return ''
+            else:
+                entity_name = entity.tags['name'] if 'name' in entity.tags else entity.id
+                return 'Wikipedia and OSM entries are more than 5km apart ({0:.2f} km) for place {1}.'.format(
+                    distance, entity_name)
+        except CalculateDistanceException as e:
+            logger.debug(e.message)
+            return e.message
 
 
 class WikidataEntryExistsCheck(AbstractCheck):
@@ -489,15 +548,54 @@ class WikidataEntryExistsCheck(AbstractCheck):
     """
     applicable_on = [City, Town, Village]
     maps_applicable_on = ['Serbia']
+    is_fixable = True
 
     def __init__(self, entity_context):
         super(WikidataEntryExistsCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        # Exclude places close, but not in Serbia
+        if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
+            return ''
+
         if 'wikidata' not in entity.tags:
             place_type = entity.tags['place']
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
             return 'Wikidata missing for {0} {1}'.format(place_type, name)
+        return ''
+
+    def fix(self, entity, api):
+        """
+        Fixing is by going to wikipedia article and getting Q value from there
+        """
+        if WikipediaEntryValidCheck(self.entity_context).do_check(entity) != '':
+            # If Wikipedia is not valid entry, no point getting wikidata
+            return ''
+
+        name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
+        wikipedia_entry = self.entity_context['local_store']['wikipedia'] \
+            if 'wikipedia' in self.entity_context['local_store'] else None
+
+        if wikipedia_entry:
+            if entity.entity_type == 'way':
+                osm_entity = api.WayGet(entity.id)
+            else:
+                osm_entity = api.NodeGet(entity.id)
+
+            if 'wikidata' not in osm_entity['tag']:
+                wikidata = wikipedia_entry.data_item().id
+                question = 'Wikidata entry was missing and it exists (based on Wikipedia article "{0}"). ' \
+                           'Are you sure you want to add tag "wikidata" for entity "{1}" with value "{2}"'.format(
+                            osm_entity['tag']['wikipedia'], name, wikidata)
+                if self.ask_confirmation(question, entity):
+                    osm_entity['tag']['wikidata'] = wikidata
+                    if not self.dry_run:
+                        if entity.entity_type == 'way':
+                            api.WayUpdate(osm_entity)
+                        else:
+                            api.NodeUpdate(osm_entity)
+                    return 'Wikidata tag for {0} "{1}" is set to be "{2}"'.format(
+                        'way' if entity.entity_type == 'way' else 'node', name, wikidata)
         return ''
 
 

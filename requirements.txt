@@ -3,6 +3,7 @@ nose==1.3.7
 osmapi==1.0.2
 osmread==0.2
 pywikibot==3.0.20170801
+mwparserfromhell==0.5
 requests==2.18.4
 urllib3==1.22
 osmium==2.13.0

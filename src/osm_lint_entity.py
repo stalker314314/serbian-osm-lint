@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 class OsmLintEntity(object):
     """
     Since our entities can either be of PyOsmium or osmread types, this is wrapper to abstract those types.
@@ -8,9 +9,19 @@ class OsmLintEntity(object):
 
     def __init__(self, entity):
         self.id = entity.id
+
         if isinstance(entity.tags, dict):
             self.tags = entity.tags
+            self.lat, self.lon = 0, 0
+            try:
+                self.lat = entity.lat
+                self.lon = entity.lon
+            except AttributeError:
+                # Ignore if it is not there
+                pass
         else:
+            self.lat = entity.location.lat
+            self.lon = entity.location.lon
             self.tags = {}
             for tag in entity.tags:
                 self.tags[tag.k] = tag.v

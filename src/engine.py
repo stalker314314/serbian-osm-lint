@@ -20,7 +20,25 @@ class CheckEngine(object):
     Main engine that do check dependency resolution, applicability resolution and perform all checks on one entity.
     """
     def __init__(self, check_classes, entity, global_context):
-        self.check_classes = check_classes[:]
+        self.check_classes = []
+        # Filter check classes by only those that are applicable for a given map
+        # This speeds up main engine
+        self.map_name = global_context['map']
+        for check_cls in check_classes:
+            map_applicable = False
+            for map_possible in check_cls.maps_applicable_on:
+                if map_possible == '*':
+                    map_applicable = True
+                    break
+                elif map_possible.startswith('!') and map_possible != self.map_name:
+                    map_applicable = True
+                    break
+                elif map_possible == self.map_name:
+                    map_applicable = True
+                    break
+            if map_applicable:
+                self.check_classes.append(check_cls)
+
         self.entity = entity
         self.global_context = global_context
 
@@ -70,27 +88,6 @@ class CheckEngine(object):
                     processed_any_cls = check_cls
                     break
 
-                # Test if this map is applicable on this check
-                map_applicable = False
-                map_name = self.global_context['map']
-                for map_possible in check_cls.maps_applicable_on:
-                    if map_possible == '*':
-                        map_applicable = True
-                        break
-                    elif map_possible.startswith('!') and map_possible != map_name:
-                        map_applicable = True
-                        break
-                    elif map_possible == map_name:
-                        map_applicable = True
-                        break
-                if not map_applicable:
-                    entity_context['checks'][check_cls_name] = {
-                        'result': Result.DEPENDENCY_NOT_SATISFIED,
-                        'messages': [],
-                        'fixable': False}
-                    processed_any_cls = check_cls
-                    break
-
                 # Test if all dependency are satisfied
                 satisfied = True
                 for dc_cls in check_cls.depends_on:
@@ -99,7 +96,7 @@ class CheckEngine(object):
                         result = entity_context['checks'][dc_cls_name]['result']
                         if result != Result.CHECKED_OK:
                             logger.debug('[%s] Dependency %s was %s and check %s not satisfied',
-                                         map_name, dc_cls_name, result, check_cls_name)
+                                         self.map_name, dc_cls_name, result, check_cls_name)
                             entity_context['checks'][check_cls_name] = {'result': Result.DEPENDENCY_NOT_SATISFIED,
                                                                         'messages': [],
                                                                         'fixable': False}
@@ -108,12 +105,12 @@ class CheckEngine(object):
                             break
                     else:
                         logger.debug('[%s] Dependency %s still not checked, skipping check %s for now',
-                                     map_name, dc_cls_name, check_cls_name)
+                                     self.map_name, dc_cls_name, check_cls_name)
                         satisfied = False
                         break
                 if satisfied:
                     logger.debug('[%s] Check %s applicable and all dependencies satisfied, doing check',
-                                 map_name, check_cls_name)
+                                 self.map_name, check_cls_name)
                     message = CheckEngine.do_entity_check_and_fix(check_cls(entity_context), self.entity)
                     if message == '':
                         entity_context['checks'][check_cls_name] = {'result': Result.CHECKED_OK,

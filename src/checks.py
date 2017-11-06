@@ -611,6 +611,9 @@ class WikidataEntryValidCheck(AbstractCheck):
         super(WikidataEntryValidCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
+            return ''
+
         wikidata_entry = pywikibot.ItemPage(wiki_repo, entity.tags['wikidata'])
         if wikidata_entry.pageid == 0:
             place_type = entity.tags['place']
@@ -632,6 +635,9 @@ class WikipediaAndWikidataInSyncCheck(AbstractCheck):
         super(WikipediaAndWikidataInSyncCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
+            return ''
+
         wikidata_entry = self.entity_context['local_store']['wikidata']
         wd_txt = wikidata_entry.text
         if 'labels' in wd_txt and 'sr' in wd_txt['labels'] and wd_txt['labels']['sr'] != entity.tags['wikipedia'][3:]:

@@ -9,10 +9,10 @@ class OsmLintEntity(object):
 
     def __init__(self, entity):
         self.id = entity.id
+        self.lat, self.lon = 0, 0
 
         if isinstance(entity.tags, dict):
             self.tags = entity.tags
-            self.lat, self.lon = 0, 0
             try:
                 self.lat = entity.lat
                 self.lon = entity.lon
@@ -20,8 +20,12 @@ class OsmLintEntity(object):
                 # Ignore if it is not there
                 pass
         else:
-            self.lat = entity.location.lat
-            self.lon = entity.location.lon
+            try:
+                self.lat = entity.location.lat
+                self.lon = entity.location.lon
+            except AttributeError:
+                # Ignore if it is not there
+                pass
             self.tags = {}
             for tag in entity.tags:
                 self.tags[tag.k] = tag.v

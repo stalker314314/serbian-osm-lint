@@ -1,0 +1,71 @@
+{
+  "Bosnia-Herzegovina": {
+    "location": "https://download.geofabrik.de/europe/bosnia-herzegovina-latest.osm.pbf",
+    "checks":
+    [
+      "checks.LatinNameExistsCheck",
+      "checks.LatinNameSameAsCyrillicCheck",
+      "checks.LatinNameNotInCyrillicCheck"
+    ]
+  },
+  "Croatia": {
+    "location": "https://download.geofabrik.de/europe/croatia-latest.osm.pbf",
+    "checks":
+    [
+      "checks.LatinNameExistsCheck",
+      "checks.LatinNameSameAsCyrillicCheck",
+      "checks.LatinNameNotInCyrillicCheck"
+    ]
+  },
+  "Kosovo": {
+    "location": "https://download.geofabrik.de/europe/kosovo-latest.osm.pbf",
+    "checks":
+    [
+      "checks.LatinNameExistsCheck",
+      "checks.LatinNameSameAsCyrillicCheck",
+      "checks.LatinNameNotInCyrillicCheck"
+    ]
+  },
+  "Macedonia": {
+    "location": "https://download.geofabrik.de/europe/macedonia-latest.osm.pbf",
+    "checks":
+    [
+      "checks.LatinNameExistsCheck",
+      "checks.LatinNameSameAsCyrillicCheck",
+      "checks.LatinNameNotInCyrillicCheck"
+    ]
+  },
+  "Montenegro": {
+    "location": "https://download.geofabrik.de/europe/montenegro-latest.osm.pbf",
+    "checks":
+    [
+      "checks.LatinNameExistsCheck",
+      "checks.LatinNameSameAsCyrillicCheck",
+      "checks.LatinNameNotInCyrillicCheck"
+    ]
+  },
+  "Serbia": {
+    "location": "https://download.geofabrik.de/europe/serbia-latest.osm.pbf",
+    "checks":
+    [
+      "checks.NameMissingCheck",
+      "checks.NameCyrillicCheck",
+      "checks.LatinNameExistsCheck",
+      "checks.LatinNameSameAsCyrillicCheck",
+      "checks.LatinNameNotInCyrillicCheck",
+      "checks.WikipediaEntryExistsCheck",
+      "checks.WikipediaEntryIsInSerbianCheck",
+      "checks.WikipediaEntryValidCheck",
+      "checks.WikidataEntryExistsCheck"
+    ]
+  },
+  "Slovenia" : {
+    "location": "https://download.geofabrik.de/europe/slovenia-latest.osm.pbf",
+    "checks":
+    [
+      "checks.LatinNameExistsCheck",
+      "checks.LatinNameSameAsCyrillicCheck",
+      "checks.LatinNameNotInCyrillicCheck"
+    ]
+  }
+}

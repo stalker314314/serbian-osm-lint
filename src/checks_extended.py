@@ -13,9 +13,7 @@ class RemoveLatinName(AbstractCheck):
     Checks that looks for name:sr-Latn tag and removes them if it exists. Not part of standard suite.
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['!Serbia']
     is_fixable = True
-    explanation = 'Removes name:sr-Latn tag'
 
     def __init__(self, entity_context):
         super(RemoveLatinName, self).__init__(entity_context)

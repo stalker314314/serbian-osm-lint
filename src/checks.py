@@ -136,8 +136,6 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
 
 class AbstractCheck(object):
     applicable_on = []
-    maps_applicable_on = ['*']
-    depends_on = []
     is_fixable = False
     explanation = ''
 
@@ -190,7 +188,6 @@ class NameMissingCheck(AbstractCheck):
     Checks that 'name' tag is present in entity.
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(NameMissingCheck, self).__init__(entity_context)
@@ -207,7 +204,6 @@ class NameCyrillicCheck(AbstractCheck):
     Checks that name of the entity is in cyrillic script.
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['*']
 
     def __init__(self, entity_context):
         super(NameCyrillicCheck, self).__init__(entity_context)
@@ -234,7 +230,6 @@ class LatinNameExistsCheck(AbstractCheck):
     Checks that for entity exists name in sr-Latn too.
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):
@@ -299,15 +294,19 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
     """
     If cyrillic name and sr-Latn name tags exists, checks that cyrillic name is transliterated equivalently to sr-Latn.
     """
-    depends_on = [NameMissingCheck, NameCyrillicCheck, LatinNameExistsCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):
         super(LatinNameSameAsCyrillicCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        if self.map == 'Serbia' and 'name' not in entity.tags:
+            return ''
+        if self.map != 'Serbia' and 'name:sr' not in entity.tags:
+            return ''
+        if 'name:sr-Latn' not in entity.tags:
+            return ''
         # Exclude places close, but not in Serbia
         if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
             return ''
@@ -353,16 +352,17 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
 
 class LatinNameNotInCyrillicCheck(AbstractCheck):
     """
-    Check that sr-Latn name in tags in not in cyrillic script.
+    Check that sr-Latn name in tags is not in cyrillic script.
     """
-    depends_on = [NameMissingCheck, LatinNameExistsCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(LatinNameNotInCyrillicCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        if 'name' not in entity.tags:
+            return ''
+
         if 'name:sr-Latn' in entity.tags and at_least_some_in_cyrillic(entity.tags['name:sr-Latn']):
             place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
@@ -376,7 +376,6 @@ class WikipediaEntryExistsCheck(AbstractCheck):
     Check that there exists Wikipedia entry for entity.
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):
@@ -431,19 +430,21 @@ class WikipediaEntryIsInSerbianCheck(AbstractCheck):
     """
     Check that Wikipedia entry for entity is in local Wikipedia, e.g. Serbian.
     """
-    depends_on = [WikipediaEntryExistsCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):
         super(WikipediaEntryIsInSerbianCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        if 'wikipedia' not in entity.tags:
+            return ''
+
         # Exclude places close, but not in Serbia
         if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
             return ''
+
         if not entity.tags['wikipedia'].startswith('sr:'):
             place_type = entity.tags['place']
             name = entity.tags['name'] if 'name' in entity.tags else entity.id
@@ -492,23 +493,25 @@ class WikipediaEntryValidCheck(AbstractCheck):
     """
     Checks that Wikipedia entry for a given entity actually exists in Wikipedia.
     """
-    depends_on = [NameCyrillicCheck, WikipediaEntryExistsCheck, WikipediaEntryIsInSerbianCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikipediaEntryValidCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        if 'name' not in entity.tags:
+            return ''
+        if 'wikipedia' not in entity.tags:
+            return ''
+        if not entity.tags['wikipedia'].startswith('sr:'):
+            return ''
+
         # Exclude places close, but not in Serbia
         if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
             return ''
 
         place_type = entity.tags['place']
         name = entity.tags['name'] if 'name' in entity.tags else entity.id
-
-        if 'wikipedia' not in entity.tags:
-            return 'Wikipedia entry missing for {0} {1} while trying to validate it.'.format(place_type, name)
 
         wikipedia_entry = self.entity_context['local_store']['wikipedia']\
             if 'wikipedia' in self.entity_context['local_store'] else None
@@ -547,7 +550,6 @@ class WikidataEntryExistsCheck(AbstractCheck):
     Check that there exists Wikidata entry for entity. 
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):
@@ -603,14 +605,15 @@ class WikidataEntryValidCheck(AbstractCheck):
     """
     Checks that Wikidata entry for a given entity actually exists in Wikidata.
     """
-    depends_on = [WikidataEntryExistsCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikidataEntryValidCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        if 'wikidata' not in entity.tags:
+            return ''
+
         if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
             return ''
 
@@ -627,14 +630,18 @@ class WikipediaAndWikidataInSyncCheck(AbstractCheck):
     """
     If both Wikipedia and Wikidata entry do exist, checks that Wikidata entry links to Wikipedia entry.
     """
-    depends_on = [WikipediaEntryValidCheck, WikidataEntryValidCheck]
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
 
     def __init__(self, entity_context):
         super(WikipediaAndWikidataInSyncCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
+        if 'wikipedia' not in entity.tags:
+            return ''
+
+        if 'wikidata' not in entity.tags:
+            return ''
+
         if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
             return ''
 
@@ -653,7 +660,6 @@ class IsInCountryCheck(AbstractCheck):
     Checks that there exists "is_in:country" tag
     """
     applicable_on = [City, Town, Village]
-    maps_applicable_on = ['Serbia']
     is_fixable = True
 
     def __init__(self, entity_context):

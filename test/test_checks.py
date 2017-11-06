@@ -161,6 +161,7 @@ class TestLatinNameNotInCyrillicCheck(AbstractTestCheck):
 
     def test_latin_name_not_in_cyrillic_check(self):
         node = Node(id=123, version=1, changeset=1, timestamp=None, uid=1, tags={}, lon=None, lat=None)
+        node.tags['name'] = 'бар'
         self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) == '')
         node.tags['name:sr-Latn'] = ''
         self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) == '')
@@ -168,6 +169,9 @@ class TestLatinNameNotInCyrillicCheck(AbstractTestCheck):
         self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) == '')
         node.tags['name:sr-Latn'] = 'фоо'
         self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) != '')
+        # If there is no name, this check reports OK
+        del node.tags['name']
+        self.assertTrue(LatinNameNotInCyrillicCheck(self.default_context).do_check(node) == '')
 
 
 if __name__ == '__main__':

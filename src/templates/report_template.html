@@ -94,7 +94,7 @@
                                     </tr>
                                     {% for entity_id, entity_check in map_check.items() %}
                                     {% for type_check, check in entity_check.2.items() %}
-                                    {% if check.result.value == 4 %}
+                                    {% if check.result.value == 3 %}
                                     <tr class="b">
                                         <td><a href="https://www.openstreetmap.org/{{ entity_check.1 }}/{{ entity_id }}">{{ entity_check.0 }}</a></td>
                                         <td>{{ type_check }}</td>

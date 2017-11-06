@@ -14,7 +14,6 @@ It features:
 * support for both executing reports on checks and automated/semi-automated OSM editing
 * fully tested and documented
 * "check framework" where one can define checks by defining:
-  * On which other checks given check is dependent
   * On which entity types check is applicable
   * On which maps check is applicable
   * Check and fix functions

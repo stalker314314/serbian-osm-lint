@@ -64,7 +64,8 @@ def process_entity(entity, context):
     :param context: Context
     :return: List of all performed checks
     """
-    cr = CheckEngine(context['checks'], entity, context)
+    map_name = context['map']
+    cr = CheckEngine(context['maps'][map_name]['checks'], entity, context)
     return cr.check_all()
 
 
@@ -159,7 +160,7 @@ def process_map(context, map_name):
 
     context = context.copy()
     context['map'] = map_name
-    filename = download_map(map_name, context['maps'][map_name])
+    filename = download_map(map_name, context['maps'][map_name]['location'])
     try:
         if found_osmium:
             return map_name, process_map_with_osmium(context, filename)
@@ -262,10 +263,8 @@ def create_global_context():
         description='Serbian OSM Lint - helper tool to detect and fix various issues on Serbian OSM project ')
     parser.add_argument('--output-file', default='report.html',
                         help='Name of output HTML file. Default value is "report.html"')
-    parser.add_argument('--maps-file', default='maps.json',
-                        help='Name of file containing maps in JSON format. Default value is "maps.json"')
-    parser.add_argument('--checks-file', default='checks.json',
-                        help='Name of file containing checks in JSON format. Default value is "checks.json"')
+    parser.add_argument('--config-file', default='config.json',
+                        help='Name of file containing config in JSON format. Default value is "config.json"')
     parser.add_argument('-f', '--fix', action='store_true',
                         help='Run in fixing/interactive mode. '
                              'Program will be run with one thread only and will ask for confirmations')
@@ -288,28 +287,21 @@ def create_global_context():
                     'for Serbian OSM Lint to function.'.format(args.password_file)
         parser.error(error_msg)
 
-    if not os.path.isfile(args.maps_file):
-        error_msg = 'File with maps {0} is missing. You need to specify JSON file where maps are'.format(
-            args.maps_file)
+    if not os.path.isfile(args.config_file):
+        error_msg = 'File with config {0} is missing. You need to specify JSON file where config is'.format(
+            args.config_file)
         parser.error(error_msg)
-    with open(args.maps_file) as f:
+    with open(args.config_file) as f:
         try:
-            maps = simplejson.load(f)
+            config = simplejson.load(f)
         except Exception as e:
-            parser.error('Error during parsing of {}: \n{}'.format(args.maps_file, e))
-
-    if not os.path.isfile(args.checks_file):
-        error_msg = 'File with checks {0} is missing. You need to specify JSON file where checks are'.format(
-            args.checks_file)
-        parser.error(error_msg)
-    with open(args.checks_file) as f:
-        try:
-            checks_str = simplejson.load(f)
-            all_checks = []
-            for check_str in checks_str:
-                all_checks.append(eval(check_str))
-        except Exception as e:
-            parser.error('Error during parsing of {}: \n{}'.format(args.checks_file, e))
+            parser.error('Error during parsing of {}: \n{}'.format(args.config_file, e))
+    # Replace checks in config with their eval-ulated version (helps to detects errors earlier)
+    for map in config:
+        eval_checks = []
+        for check in config[map]['checks']:
+            eval_checks.append(eval(check))
+        config[map]['checks'] = eval_checks
 
     try:
         changeset_size = int(args.changeset_size)
@@ -325,8 +317,7 @@ def create_global_context():
                                      u"wikidata/wikipedia links",
                          u"tag": u"mechanical=yes"})
 
-    global_context = {'checks': all_checks,
-                      'maps': maps,
+    global_context = {'maps': config,
                       'report': not args.no_report,
                       'fix': args.fix,
                       'dry_run': args.dry_run,

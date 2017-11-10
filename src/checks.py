@@ -30,11 +30,11 @@ def _wiki_osm_distance(wikipedia_entry, valid_boxes, osm_entity):
     if found_box is None:
         raise CalculateDistanceException(
             'Cannot calculate distance as Wikipedia article {0} does not contain any of valid boxes {1}'.format(
-                     wikipedia_entry.title, ','.join(valid_boxes)))
+                     wikipedia_entry.title(), ','.join(valid_boxes)))
 
     if 'гшир' not in found_box or 'гдуж' not in found_box:
         raise CalculateDistanceException('Wikipedia entry {0} is missing latitude or longitude'.format(
-            wikipedia_entry.title))
+            wikipedia_entry.title()))
 
     wiki_point = (float(found_box['гшир']), float(found_box['гдуж']))
 

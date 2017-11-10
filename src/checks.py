@@ -50,7 +50,7 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
     * It needs to exist:)
     * It needs to have at least one of the valid_boxes template (template that each place in Serbia have)
     * Template mentioned above need to have latitude and longitude
-    * Latitude and longitude should not differ more than 5km between OSM entity and template
+    * Latitude and longitude should not differ more than 20km between OSM entity and template
     * If article is leading to ambiguous page (template 'Вишезначна одредница'), we will recursively check all
         links pointing to it.
     * If article is having 'other meaning' link, it will recursively check that link
@@ -120,14 +120,14 @@ def _guess_from_wikipedia(name, entity, api, valid_boxes, visited_pages=None, de
             return None
 
     # It is about residential place, let's see how apart are Wiki and OSM place,
-    # if they are not too far apart (5km), it means we have a winner!
+    # if they are not too far apart (20km), it means we have a winner!
     try:
         distance = _wiki_osm_distance(page, valid_boxes, entity)
-        if distance <= 5:
+        if distance <= 20:
             return name
         else:
             entity_name = entity.tags['name'] if 'name' in entity.tags else entity.id
-            logger.info('Wikipedia and OSM entries are more than 5km apart (%.2f km) for place %s.', distance, entity_name)
+            logger.info('Wikipedia and OSM entries are more than 20km apart (%.2f km) for place %s.', distance, entity_name)
             return None
     except CalculateDistanceException as e:
         logger.debug(e.message)
@@ -532,13 +532,13 @@ class WikipediaEntryValidCheck(AbstractCheck):
         try:
             distance = _wiki_osm_distance(wikipedia_entry,
                                           ['Насељено место у Србији', 'Град у Србији', 'Градска четврт'], entity)
-            if distance <= 5:
+            if distance <= 20:
                 # Cache it now
                 self.entity_context['local_store']['wikipedia'] = wikipedia_entry
                 return ''
             else:
                 entity_name = entity.tags['name'] if 'name' in entity.tags else entity.id
-                return 'Wikipedia and OSM entries are more than 5km apart ({0:.2f} km) for place {1}.'.format(
+                return 'Wikipedia and OSM entries are more than 20km apart ({0:.2f} km) for place {1}.'.format(
                     distance, entity_name)
         except CalculateDistanceException as e:
             logger.debug(e.message)

@@ -13,19 +13,11 @@ class OsmLintEntity(object):
 
         if isinstance(entity.tags, dict):
             self.tags = entity.tags
-            try:
-                self.lat = entity.lat
-                self.lon = entity.lon
-            except AttributeError:
-                # Ignore if it is not there
-                pass
+            self.lat = entity.lat
+            self.lon = entity.lon
         else:
-            try:
-                self.lat = entity.location.lat
-                self.lon = entity.location.lon
-            except AttributeError:
-                # Ignore if it is not there
-                pass
+            self.lat = entity.location.lat
+            self.lon = entity.location.lon
             self.tags = {}
             for tag in entity.tags:
                 self.tags[tag.k] = tag.v

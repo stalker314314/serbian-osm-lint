@@ -185,12 +185,18 @@ def process_map_with_osmread(context, filename):
     processed = 0
     all_checks = {}
     for raw_entity in parse_file(filename):
-        entity = OsmLintEntity(raw_entity)
         processed += 1
         if processed % 100000 == 0:
             logger.info('[%s] Processed %d entities', context['map'], processed)
             # If needed, this is how you can stop execution early
             # return all_checks
+
+        try:
+            entity = OsmLintEntity(raw_entity)
+        except AttributeError as e:
+            # We cannot process this entity, skip it
+            logger.debug(e)
+            continue
 
         checks_done = process_entity(entity, context)
 
@@ -225,12 +231,19 @@ def process_map_with_osmium(context, filename):
             self.all_checks = {}
 
         def process_entity(self, raw_entity, entity_type):
-            entity = OsmLintEntity(raw_entity)
             self.processed += 1
             if self.processed % 100000 == 0:
                 logger.info('[%s] Processed %d entities', context['map'], self.processed)
                 # If needed, this is how you can stop execution early
                 # raise SignalEndOfExecution
+
+            try:
+                entity = OsmLintEntity(raw_entity)
+            except AttributeError as e:
+                # We cannot process this entity, skip it
+                logger.debug(e)
+                return
+
             checks_done = process_entity(entity, self.context)
 
             if len(checks_done) > 0:

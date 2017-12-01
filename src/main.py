@@ -24,37 +24,9 @@ from jinja2 import Environment, PackageLoader
 
 import tools
 from engine import CheckEngine, Result
-from osm_lint_entity import OsmLintEntity
+from sources.source_factory import SourceFactory
 
 logger = tools.setup_logger(logging_level=logging.INFO)
-
-
-def download_map(map_name, map_uri):
-    """
-    Downloads map from internet. It is up to the caller to remove this temporary file.
-    :param map_name: Name of the map to download
-    :param map_uri: URI of the map to download
-    :return: Temprorary filename where map is downloaded
-    """
-    logger.info('[%s] Downloading %s', map_name, map_uri)
-    r = requests.get(map_uri, stream=True)
-    if not r.ok:
-        raise Exception(r.reason)
-    f = tempfile.NamedTemporaryFile(suffix='.pbf', prefix=map_name + '_', delete=False)
-    try:
-        chunk_number = 0
-        for chunk in r.iter_content(chunk_size=1024):
-            f.write(chunk)
-            chunk_number = chunk_number + 1
-            if chunk_number % (10 * 1024) == 0:
-                logger.info('[%s] Downloaded %d MB', map_name, chunk_number / 1024)
-        f.close()
-        logger.info('[%s] Map %s downloaded, parsing it now', map_name, map_name)
-        return f.name
-    except Exception as e:
-        logger.exception(e)
-        os.remove(f.name)
-        raise
 
 
 def process_entity(entity, context):
@@ -131,146 +103,6 @@ def generate_report(context, all_checks):
         fh.write(output)
 
 
-def process_map(context, map_name):
-    """
-    Library agnostic map processing. It will download map and use either PyOsmium/osmread to read map.
-    It also cleans all downloaded maps.
-    """
-    logger.info('[%s] Starting processing of map %s', map_name, map_name)
-
-    found_osmium, found_osmread = False, False
-    try:
-        import osmium
-        found_osmium = True
-    except ImportError:
-        pass
-    try:
-        import osmread
-        found_osmread = True
-    except ImportError:
-        pass
-
-    if found_osmium:
-        logger.info('[%s] Found osmium library, using it', map_name)
-    elif found_osmread:
-        logger.warning('[%s] Found osmread library, but not osmium library. Reading of maps will be slower', map_name)
-    else:
-        logger.error('[%s] Didn\'t found any library for reading maps, quitting', map_name)
-        return
-
-    context = context.copy()
-    context['map'] = map_name
-    filename = download_map(map_name, context['maps'][map_name]['location'])
-    try:
-        if found_osmium:
-            return map_name, process_map_with_osmium(context, filename)
-        elif found_osmread:
-            return map_name, process_map_with_osmread(context, filename)
-        else:
-            logger.error('[%s] Didn\'t found any library for reading maps, quitting', map_name)
-    except Exception as e:
-        logger.exception(e)
-        raise
-    finally:
-        os.remove(filename)
-
-
-def process_map_with_osmread(context, filename):
-    """
-    Process one map given its filename, using osmread
-    """
-    # This import is here since user doesn't have to have it (optional)
-    from osmread import parse_file
-
-    processed = 0
-    all_checks = {}
-    for raw_entity in parse_file(filename):
-        processed += 1
-        if processed % 100000 == 0:
-            logger.info('[%s] Processed %d entities', context['map'], processed)
-            # If needed, this is how you can stop execution early
-            # return all_checks
-
-        try:
-            entity = OsmLintEntity(raw_entity)
-        except AttributeError as e:
-            # We cannot process this entity, skip it
-            logger.debug(e)
-            continue
-
-        checks_done = process_entity(entity, context)
-
-        if len(checks_done) > 0:
-            if context['map'] == 'Serbia':
-                name = entity.tags['name'] if 'name' in entity.tags else entity.id
-            else:
-                original_name = entity.tags['name'] if 'name' in entity.tags else entity.id
-                if 'name:sr' in entity.tags:
-                    name = '{0} / {1}'.format(original_name, entity.tags['name:sr'])
-                else:
-                    name = original_name
-            all_checks[entity.id] = (name, entity.entity_type, checks_done)
-    return all_checks
-
-
-def process_map_with_osmium(context, filename):
-    """
-    Process one map given its filename, using PyOsmium
-    """
-    # This import is here since user doesn't have to have it (optional)
-    import osmium
-
-    class SignalEndOfExecution(Exception):
-        pass
-
-    class SerbianOsmLintHandler(osmium.SimpleHandler):
-        def __init__(self, context):
-            osmium.SimpleHandler.__init__(self)
-            self.context = context
-            self.processed = 0
-            self.all_checks = {}
-
-        def process_entity(self, raw_entity, entity_type):
-            self.processed += 1
-            if self.processed % 100000 == 0:
-                logger.info('[%s] Processed %d entities', context['map'], self.processed)
-                # If needed, this is how you can stop execution early
-                # raise SignalEndOfExecution
-
-            try:
-                entity = OsmLintEntity(raw_entity)
-            except AttributeError as e:
-                # We cannot process this entity, skip it
-                logger.debug(e)
-                return
-
-            checks_done = process_entity(entity, self.context)
-
-            if len(checks_done) > 0:
-                if context['map'] == 'Serbia':
-                    name = entity.tags['name'] if 'name' in entity.tags else entity.id
-                else:
-                    original_name = entity.tags['name'] if 'name' in entity.tags else entity.id
-                    if 'name:sr' in entity.tags:
-                        name = '{0} / {1}'.format(original_name, entity.tags['name:sr'])
-                    else:
-                        name = original_name
-                self.all_checks[entity.id] = (name, entity_type, checks_done)
-
-        def node(self, n):
-            self.process_entity(n, 'node')
-
-        def way(self, w):
-            self.process_entity(w, 'way')
-
-    sloh = SerbianOsmLintHandler(context)
-    try:
-        sloh.apply_file(filename)
-    except SignalEndOfExecution:
-        pass
-    return sloh.all_checks
-
-
 def create_global_context():
     parser = argparse.ArgumentParser(
         description='Serbian OSM Lint - helper tool to detect and fix various issues on Serbian OSM project ')
@@ -339,6 +171,18 @@ def create_global_context():
     return global_context
 
 
+def process_map(context, map_name):
+    """
+    Figures out which source it should use and calls it
+    """
+    logger.info('[%s] Starting processing of map %s', map_name, map_name)
+    context = context.copy()
+    context['map'] = map_name
+    source_factory = SourceFactory(process_entity, context)
+    source = source_factory.create_source(map_name)
+    return map_name, source.process_map()
+
+
 def main():
     global_context = create_global_context()
 
@@ -363,6 +207,7 @@ def main():
         global_context['api'].flush()
     if global_context['report']:
         generate_report(global_context, all_checks)
+
 
 if __name__ == '__main__':
     main()

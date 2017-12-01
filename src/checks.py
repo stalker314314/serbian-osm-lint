@@ -3,7 +3,7 @@
 import pywikibot
 
 import tools
-from applicability import City, Town, Village
+from applicability import City, Town, Village, SophoxEntity
 from exceptions import CalculateDistanceException
 from haversine import haversine
 from transliteration import at_least_some_in_cyrillic, cyr2lat
@@ -175,6 +175,12 @@ class AbstractCheck(object):
         :return: True if user confirmed, False otherwise
         """
         for k, v in entity.tags.items():
+            # Ignore following (coming from Sophox), just polluting output
+            if k == 'metadata':
+                continue
+            if k.startswith('tag_') or k.startswith('val_'):
+                continue
+
             print('{0}: {1}'.format(k, v))
         print('https://www.openstreetmap.org/{0}/{1}'.format(entity.entity_type, entity.id))
         response = input('[{0}] {1} (Y/n)?'.format(self.map, input_text))
@@ -690,3 +696,88 @@ class IsInCountryCheck(AbstractCheck):
                     api.NodeUpdate(node)
                 return 'is_in:country for node {0} was missing, added it to be "{1}"'.format(name, 'Serbia')
         return ''
+
+
+class GenericSophoxCheck(AbstractCheck):
+    """
+    Check semantically same to Sophox service. Will also fix things if there are (tag_N, val_N) pairs.
+    """
+    applicable_on = [SophoxEntity]
+    is_fixable = True
+
+    def __init__(self, entity_context):
+        super(GenericSophoxCheck, self).__init__(entity_context)
+
+    def do_check(self, entity):
+        # By definition, everything returned from Sophox is not passing check
+        name = entity.tags['name'] if 'name' in entity.tags else entity.id
+        comment = entity.tags['metadata']['comment'] if 'comment' in entity.tags['metadata'] else 'no description'
+        return 'Entity {0}: {1}'.format(name, comment)
+
+    def fix(self, entity, api):
+        name = entity.tags['name'] if 'name' in entity.tags else entity.id
+        changed_anything = False
+        if entity.entity_type == 'way':
+            osm_entity = api.WayGet(entity.id)
+        elif entity.entity_type == 'node':
+            osm_entity = api.NodeGet(entity.id)
+        else:
+            osm_entity = api.RelationGet(entity.id)
+
+        # Check for all suggestions
+        suggestion_id = 1
+        while True:
+            tag_key = 'tag_{0}'.format(suggestion_id)
+            value_key = 'val_{0}'.format(suggestion_id)
+            if tag_key not in entity.tags:  # If there is no this tag, we reached the end
+                break
+            tag = entity.tags[tag_key]['value']
+            val = entity.tags[value_key]['value']
+            if val == 'false' and entity.tags[value_key]['datatype'] == 'http://www.w3.org/2001/XMLSchema#boolean':
+                val = None
+
+            if val is not None:
+                # We are adding/modifying value
+                if tag not in osm_entity['tag']:
+                    # Case that it doesn't exist
+                    question = 'Are you really sure you want to add tag "{0}" with value "{1}" to entity "{2}"'.format(
+                        tag, val, name
+                    )
+                else:
+                    existing_value = osm_entity['tag']
+                    if existing_value != val:
+                        # Case that we need to modify value
+                        question = 'Are you really sure you want to change tag "{0}" from value {1} to value "{2}" ' \
+                                   'for entity "{3}"'.format(tag, osm_entity['tag'][tag], val, name)
+                    else:
+                        # Case that value is already set as per query, so no changes needed
+                        question = ''
+            else:
+                # We are trying to delete value
+                if tag in osm_entity['tag']:
+                    question = 'Are you really sure you want to delete tag "{0}" with value {1} for entity "{2}"'\
+                        .format(tag, osm_entity['tag'][tag], name)
+                else:
+                    # Already deleted
+                    question = ''
+
+            if question != '' and self.ask_confirmation(question, entity):
+                changed_anything = True
+                if val is not None:
+                    osm_entity['tag'][tag] = val
+                else:
+                    del osm_entity['tag'][tag]
+
+                if not self.dry_run:
+                    if entity.entity_type == 'way':
+                        api.WayUpdate(osm_entity)
+                    elif entity.entity_type == 'node':
+                        api.NodeUpdate(osm_entity)
+                    else:
+                        api.RelationUpdate(osm_entity)
+            suggestion_id = suggestion_id + 1
+
+        if changed_anything:
+            return 'Fixes made'
+        else:
+            return ''

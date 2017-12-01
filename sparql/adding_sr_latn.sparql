@@ -1,0 +1,40 @@
+SELECT
+  ?id ?loc
+  ('name:sr-Latn' AS ?tag_1) (?correctLatinName as ?val_1)
+WHERE {
+  ?id osmt:name ?name ;
+      osmt:highway ?highway ; # Ovim se filtriraju samo ulice. Zakomentarisati za sve entitete
+      osmm:type ?mtype .
+
+  FILTER (regex(str(?name), "а|б|в|г|д|ђ|е|ж|з|и|ј|к|л|љ|м|н|њ|о|п|р|с|т|ћ|у|ф|х|ц|ч|џ|ш", "i")) . # Ovako filtriramo samo cirilicna imena
+
+  BIND(
+    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    ?name,
+    # Mala slova
+    'а', 'a'), 'б', 'b'), 'в', 'v'), 'г', 'g'), 'д', 'd'), 'ђ', 'đ'), 'е', 'e'), 'ж', 'ž'), 'з', 'z'), 'и', 'i'),
+    'ј', 'j'), 'к', 'k'), 'л', 'l'), 'љ', 'lj'), 'м', 'm'), 'н', 'n'), 'њ', 'nj'), 'о', 'o'), 'п', 'p'), 'р', 'r'),
+    'с', 's'), 'т', 't'), 'ћ', 'ć'), 'у', 'u'), 'ф', 'f'), 'х', 'h'), 'ц', 'c'), 'ч', 'č'), 'џ', 'dž'), 'ш', 'š'),
+    # Velika slova
+    'А', 'A'), 'Б', 'B'), 'В', 'V'), 'Г', 'G'), 'Д', 'D'), 'Ђ', 'Đ'), 'Е', 'E'), 'Ж', 'Ž'), 'З', 'Z'), 'И', 'I'),
+    'Ј', 'J'), 'К', 'K'), 'Л', 'L'), 'Љ', 'Lj'), 'М', 'M'), 'Н', 'N'), 'Њ', 'Nj'), 'О', 'O'), 'П', 'P'), 'Р', 'R'),
+    'С', 'S'), 'Т', 'T'), 'Ћ', 'Ć'), 'У', 'U'), 'Ф', 'F'), 'Х', 'H'), 'Ц', 'C'), 'Ч', 'Č'), 'Џ', 'Dž'), 'Ш', 'Š')
+  as ?correctLatinName)
+
+  SERVICE wikibase:around {
+    ?id osmm:loc ?loc .
+    # Koordinata centra Beograda, zameni da dobijes krug sa centrom u drugoj tacki
+    bd:serviceParam wikibase:center "Point(20.45340 44.79338)"^^geo:wktLiteral.
+    # Precnik kruga u kilometrima, povecaj/smanji po zelji
+    bd:serviceParam wikibase:radius "15" .
+  }
+
+  OPTIONAL { ?id osmt:name:sr-Latn ?currentLatinName . } # Uzmi trenutno latinicno ime, ako postoji
+  FILTER (NOT EXISTS { ?id osmt:name:sr-Latn ?namesrlatn . } || ?correctLatinName != ?currentLatinName) # Napravi ime ako ne postoji ili ako se ne slaze
+  # FILTER (?mtype = 'w') . # Stavite 'n', 'w' ili 'r' ako zelite da filtrirate po tipu entiteta
+}

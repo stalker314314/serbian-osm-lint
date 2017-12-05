@@ -42,6 +42,7 @@ class SophoxSource(OSMSource):
             else:
                 break
 
+        logger.info('Found %d results', len(results["results"]["bindings"]))
         for result in results["results"]["bindings"]:
             result['metadata'] = metadata
             self._entity_found(result)

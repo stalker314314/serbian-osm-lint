@@ -747,7 +747,7 @@ class GenericSophoxCheck(AbstractCheck):
                     existing_value = osm_entity['tag']
                     if existing_value != val:
                         # Case that we need to modify value
-                        question = 'Are you really sure you want to change tag "{0}" from value {1} to value "{2}" ' \
+                        question = 'Are you really sure you want to change tag "{0}" from value "{1}" to value "{2}" ' \
                                    'for entity "{3}"'.format(tag, osm_entity['tag'][tag], val, name)
                     else:
                         # Case that value is already set as per query, so no changes needed
@@ -755,7 +755,7 @@ class GenericSophoxCheck(AbstractCheck):
             else:
                 # We are trying to delete value
                 if tag in osm_entity['tag']:
-                    question = 'Are you really sure you want to delete tag "{0}" with value {1} for entity "{2}"'\
+                    question = 'Are you really sure you want to delete tag "{0}" with value "{1}" for entity "{2}"'\
                         .format(tag, osm_entity['tag'][tag], name)
                 else:
                     # Already deleted

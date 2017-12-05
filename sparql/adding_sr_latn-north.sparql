@@ -29,7 +29,7 @@ WHERE {
 
   SERVICE wikibase:around {
     ?id osmm:loc ?loc .
-    # Koordinata centra Beograda, zameni da dobijes krug sa centrom u drugoj tacki
+    # Koordinata severnog dela Srbije (zameni da dobijes krug sa centrom u drugoj tacki)
     bd:serviceParam wikibase:center "Point(20.0560 45.0784)"^^geo:wktLiteral.
     # Precnik kruga u kilometrima, povecaj/smanji po zelji
     bd:serviceParam wikibase:radius "150" .

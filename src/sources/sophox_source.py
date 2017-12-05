@@ -2,11 +2,13 @@
 
 from SPARQLWrapper import SPARQLWrapper, JSON
 import tools
+import re
 from sources.osm_source import OSMSource
-from osm_lint_entity import OsmLintEntity
+import simplejson
 
 logger = tools.get_logger(__name__)
 
+p_metadata = re.compile('#defaultView:Editor\s*(?P<json>.*)')
 
 class SophoxSource(OSMSource):
     def __init__(self, context, process_entity_callback, map_name, query):
@@ -19,10 +21,14 @@ class SophoxSource(OSMSource):
         sparql.setReturnFormat(JSON)
         results = sparql.query().convert()
 
-        if 'id' not in results['head']['vars']:
-            raise Exception('Column "id" must be present in SPARQL query')
-        if 'loc' not in results['head']['vars']:
-            raise Exception('Column "loc" must be present in SPARQL query')
+        for required_column in ['id', 'loc', 'name']:
+            if required_column not in results['head']['vars']:
+                raise Exception('Column "{0}" must be present in SPARQL query'.format(required_column))
+
+        metadata = {}
+        metadata_match = p_metadata.match(self.query)
+        if metadata_match:
+            metadata = simplejson.loads(metadata_match.group(1))
 
         # Count suggestions as total number of 'tag_N' columns. They should start from 1.
         # It is OK if there is no suggestions
@@ -36,10 +42,6 @@ class SophoxSource(OSMSource):
             else:
                 break
 
-        all_checks = {}
-
         for result in results["results"]["bindings"]:
-            #print(result)
+            result['metadata'] = metadata
             self._entity_found(result)
-
-        return all_checks

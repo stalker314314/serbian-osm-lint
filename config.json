@@ -70,6 +70,8 @@
   },
   "Serbia-AddingSrLatn": {
     "location": "sparql/adding_sr_latn.sparql",
-    "checks": []
+    "checks": [
+      "checks.GenericSophoxCheck"
+    ]
   }
 }

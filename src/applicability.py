@@ -39,3 +39,12 @@ class Village(Applicability):
     @staticmethod
     def is_entity_applicable(entity):
         return entity and 'place' in entity.tags and entity.tags['place'] == 'village'
+
+
+class SophoxEntity(Applicability):
+    """
+    Check that entity is coming form Sophox, no other questions asked
+    """
+    @staticmethod
+    def is_entity_applicable(entity):
+        return entity.origin == 'sophox'

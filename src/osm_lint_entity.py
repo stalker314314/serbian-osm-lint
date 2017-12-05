@@ -5,6 +5,7 @@ import re
 p_point = re.compile('Point\((?P<lat>[-0-9.]+)\s(?P<lon>[-0-9.]+)\)')
 p_url = re.compile('https://www.openstreetmap.org/(?P<type>.*)/(?P<id>\d+)')
 
+
 class OsmLintEntity(object):
     """
     Since our entities can either be of various types (PyOsmium, osmread...), this is wrapper to abstract those types.
@@ -17,11 +18,13 @@ class OsmLintEntity(object):
 
         self.id = entity.id
         self.lat, self.lon = 0, 0
+        self.origin = 'pbf'
 
         if isinstance(entity.tags, dict):
             self.tags = entity.tags
             self.lat = entity.lat
             self.lon = entity.lon
+
         else:
             self.lat = entity.location.lat
             self.lon = entity.location.lon
@@ -44,7 +47,12 @@ class OsmLintEntity(object):
             raise Exception('Invalid format for point. Expected Point(lat lon) and got {}', loc)
         self.lat = float(m.group('lat'))
         self.lon = float(m.group('lon'))
-        self.tags = {}  # No tags from Sophox
+        self.origin = 'sophox'
+        self.tags = {}
+        for key in entity:
+            if key in ('id', 'loc'):  # Skip these special ones
+                continue
+            self.tags[key] = entity[key]
 
     @staticmethod
     def _get_entity_type(entity):

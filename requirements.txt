@@ -9,3 +9,4 @@ urllib3==1.22
 osmium==2.13.0
 simplejson==3.11.1
 SPARQLWrapper==1.8.0
+SPARQLWrapper==1.8.0

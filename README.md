@@ -8,8 +8,9 @@ However, it is not constrained to just Serbian checks on OSM, it _is_ general pu
 
 It features:
 * Support for Windows/Linux/Mac, Python 3.x
-* Support for both (fast) [PyOsmium](http://osmcode.org/pyosmium/) library,
+* Support for reading PBF files using (fast) [PyOsmium](http://osmcode.org/pyosmium/) library,
  as well as [osmread](https://github.com/dezhin/osmread) library (PyOsmium seems 2x-5x faster than osmread, but I dare you to compile it on Windows:)
+ * Support for [Sophox SPARQL queries](https://wiki.openstreetmap.org/wiki/Sophox)
 * extensive configuration support
 * support for both executing reports on checks and automated/semi-automated OSM editing
 * fully tested and documented

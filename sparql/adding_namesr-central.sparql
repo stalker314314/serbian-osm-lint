@@ -1,4 +1,4 @@
-#defaultView:Editor{ "comment":"Poluautomatsko dodavanje name:sr-Latn na ulice u Srbiji", "vote":false }
+#defaultView:Editor{ "comment":"Semi-automatic addition of name:sr to highways in Serbia", "check_description": "Entity {0} is missing name:sr tag", "vote":false }
 SELECT
   ?id ?name ?loc
   ('name:sr' AS ?tag_1) (?fixed as ?val_1)

@@ -1,4 +1,4 @@
-#defaultView:Editor{ "comment":"Adding name tag if there is name:sr tag", "vote":false }
+#defaultView:Editor{ "comment":"Adding name tag from name:sr tag", "check_description": "Entity {0} is missing name tag", "vote":false }
 SELECT
   ?id (?namesr AS ?name) ?loc ("name" AS ?tag_1) (?namesr AS ?val_1)
 WHERE {

@@ -1,4 +1,4 @@
-#defaultView:Editor{ "comment":"Poluautomatsko dodavanje name:sr-Latn na ulice u Srbiji", "vote":false }
+#defaultView:Editor{ "comment":"Semi-automatic addition of name:sr tag to highways in Serbia", "check_description": "Entity {0} is missing name:sr tag", "vote":false }
 SELECT
   ?id ?name ?loc
   ('name:sr' AS ?tag_1) (?fixed as ?val_1)
@@ -7,7 +7,8 @@ WHERE {
       osmt:highway ?highway ; # Ovim se filtriraju samo ulice. Zakomentarisati za sve entitete
       osmm:type ?mtype .
 
-  # Ovako filtriramo samo latinicna imena. Primetiti da nedostaju slova "i" i "v". To je zato sto su cesta u rimskim brojevima, pa mozemo da ih izostavimo
+  # Ovako filtriramo samo latinicna imena. Primetiti da nedostaju slova "i" i "v".
+  # To je zato sto su cesta u rimskim brojevima, pa mozemo da ih izostavimo.
   # Gubimo ovako detekciju latinicnih imena "iii", "vi", "viv", ali to je OK cena za platiti:)
   FILTER (regex(str(?name), "a|b|c|č|ć|d|đ|e|f|g|h|j|k|l|m|n|o|p|r|s|š|t|u|z|ž", "i")) .
   FILTER (!regex(str(?name), "x|y|w|q", "i")) . # Ovako filtriramo ocigledno engleska imena

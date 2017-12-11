@@ -710,9 +710,10 @@ class GenericSophoxCheck(AbstractCheck):
 
     def do_check(self, entity):
         # By definition, everything returned from Sophox is not passing check
-        name = entity.tags['name'] if 'name' in entity.tags else entity.id
-        comment = entity.tags['metadata']['comment'] if 'comment' in entity.tags['metadata'] else 'no description'
-        return 'Entity {0}: {1}'.format(name, comment)
+        name = entity.tags['name']['value'] if 'name' in entity.tags else entity.id
+        check_description = entity.tags['metadata']['check_description'] \
+            if 'check_description' in entity.tags['metadata'] else 'no description'
+        return check_description.format(name)
 
     def fix(self, entity, api):
         name = entity.tags['name'] if 'name' in entity.tags else entity.id

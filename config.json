@@ -74,14 +74,14 @@
       "checks.GenericSophoxCheck"
     ]
   },
-  "Serbia-AddingSrLatn-North": {
-    "location": "sparql/adding_sr_latn-north.sparql",
+  "Serbia-AddingNameSrLatn-North": {
+    "location": "sparql/adding_namesr-latn_north.sparql",
     "checks": [
       "checks.GenericSophoxCheck"
     ]
   },
-  "Serbia-AddingSrLatn-South": {
-    "location": "sparql/adding_sr_latn-south.sparql",
+  "Serbia-AddingNameSrLatn-South": {
+    "location": "sparql/adding_namesr-latn_south.sparql",
     "checks": [
       "checks.GenericSophoxCheck"
     ]

@@ -52,7 +52,10 @@ class OsmLintEntity(object):
         for key in entity:
             if key in ('id', 'loc'):  # Skip these special ones
                 continue
-            self.tags[key] = entity[key]
+            if key == 'metadata':  # Special key holding our metadata definition from start of the query
+                self.tags[key] = entity[key]
+            else:
+                self.tags[key] = entity[key]['value']
 
     @staticmethod
     def _get_entity_type(entity):

@@ -79,5 +79,35 @@
     "checks": [
       "checks.GenericSophoxCheck"
     ]
+  },
+  "Serbia-AddingNameSr-North": {
+    "location": "sparql/adding_namesr-north.sparql",
+    "checks": [
+      "checks.GenericSophoxCheck"
+    ]
+  },
+  "Serbia-AddingNameSr-Central": {
+    "location": "sparql/adding_namesr-central.sparql",
+    "checks": [
+      "checks.GenericSophoxCheck"
+    ]
+  },
+  "Serbia-AddingNameSr-West": {
+    "location": "sparql/adding_namesr-west.sparql",
+    "checks": [
+      "checks.GenericSophoxCheck"
+    ]
+  },
+  "Serbia-AddingNameSr-East": {
+    "location": "sparql/adding_namesr-east.sparql",
+    "checks": [
+      "checks.GenericSophoxCheck"
+    ]
+  },
+  "Serbia-AddingNameSr-South": {
+    "location": "sparql/adding_namesr-south.sparql",
+    "checks": [
+      "checks.GenericSophoxCheck"
+    ]
   }
 }

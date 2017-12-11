@@ -2,10 +2,12 @@
 SELECT
   ?id (?namesr AS ?name) ?loc ("name" AS ?tag_1) (?namesr AS ?val_1)
 WHERE {
-  ?id osmt:name:sr ?namesr;
-      osmt:highway ?highway .
+  ?id osmt:name:sr ?namesr .
 
+  # OPTIONAL { ?id osmt:place ?place . FILTER (?place = "town") } .
+  # OPTIONAL { ?id osmt:highway ?highway } .
   FILTER (NOT EXISTS { ?id osmt:name ?namereal . }) .
+  FILTER (EXISTS { ?id osmt:place ?place } || EXISTS { ?id osmt:highway ?highway }) .
 
   SERVICE wikibase:around {
     ?id osmm:loc ?loc .

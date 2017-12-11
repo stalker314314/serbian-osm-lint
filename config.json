@@ -1,118 +1,40 @@
 {
-  "Bosnia-Herzegovina": {
-    "location": "https://download.geofabrik.de/europe/bosnia-herzegovina-latest.osm.pbf",
-    "checks":
-    [
+  "Checks outside of Serbia": {
+    "maps": {
+      "Bosnia-Herzegovina": "https://download.geofabrik.de/europe/bosnia-herzegovina-latest.osm.pbf",
+      "Croatia": "https://download.geofabrik.de/europe/croatia-latest.osm.pbf",
+      "Kosovo": "https://download.geofabrik.de/europe/kosovo-latest.osm.pbf",
+      "Macedonia": "https://download.geofabrik.de/europe/macedonia-latest.osm.pbf",
+      "Montenegro": "https://download.geofabrik.de/europe/montenegro-latest.osm.pbf",
+      "Slovenia" : "https://download.geofabrik.de/europe/slovenia-latest.osm.pbf"
+    },
+    "checks": [
       "checks.LatinNameExistsCheck",
       "checks.LatinNameSameAsCyrillicCheck",
       "checks.LatinNameNotInCyrillicCheck"
     ]
   },
-  "Croatia": {
-    "location": "https://download.geofabrik.de/europe/croatia-latest.osm.pbf",
-    "checks":
-    [
-      "checks.LatinNameExistsCheck",
-      "checks.LatinNameSameAsCyrillicCheck",
-      "checks.LatinNameNotInCyrillicCheck"
-    ]
-  },
-  "Kosovo": {
-    "location": "https://download.geofabrik.de/europe/kosovo-latest.osm.pbf",
-    "checks":
-    [
-      "checks.LatinNameExistsCheck",
-      "checks.LatinNameSameAsCyrillicCheck",
-      "checks.LatinNameNotInCyrillicCheck"
-    ]
-  },
-  "Macedonia": {
-    "location": "https://download.geofabrik.de/europe/macedonia-latest.osm.pbf",
-    "checks":
-    [
-      "checks.LatinNameExistsCheck",
-      "checks.LatinNameSameAsCyrillicCheck",
-      "checks.LatinNameNotInCyrillicCheck"
-    ]
-  },
-  "Montenegro": {
-    "location": "https://download.geofabrik.de/europe/montenegro-latest.osm.pbf",
-    "checks":
-    [
-      "checks.LatinNameExistsCheck",
-      "checks.LatinNameSameAsCyrillicCheck",
-      "checks.LatinNameNotInCyrillicCheck"
-    ]
-  },
-  "Serbia": {
-    "location": "https://download.geofabrik.de/europe/serbia-latest.osm.pbf",
-    "checks":
-    [
-      "checks.NameMissingCheck",
-      "checks.NameCyrillicCheck",
+  "Serbia checks": {
+    "maps": {
+      "PBF": "https://download.geofabrik.de/europe/serbia-latest.osm.pbf",
+      "Sophox adding name": "sparql/adding_name.sparql",
+      "Sophox converting name:sr to cyrillic": "sparql/changing_namesr_to_cyrillic.sparql",
+      "Sophox adding missing name:sr north": "sparql/adding_namesr_north.sparql",
+      "Sophox adding missing name:sr central": "sparql/adding_namesr_central.sparql",
+      "Sophox adding missing name:sr west": "sparql/adding_namesr_west.sparql",
+      "Sophox adding missing name:sr east": "sparql/adding_namesr_east.sparql",
+      "Sophox adding missing name:sr south": "sparql/adding_namesr_south.sparql",
+      "Sophox adding missing name:sr-Latn north": "sparql/adding_namesr-latn_north.sparql",
+      "Sophox adding missing name:sr-Latn north": "sparql/adding_namesr-latn_south.sparql"
+    },
+    "checks": [
       "checks.LatinNameExistsCheck",
       "checks.LatinNameSameAsCyrillicCheck",
       "checks.LatinNameNotInCyrillicCheck",
       "checks.WikipediaEntryExistsCheck",
       "checks.WikipediaEntryIsInSerbianCheck",
       "checks.WikipediaEntryValidCheck",
-      "checks.WikidataEntryExistsCheck"
-    ]
-  },
-  "Slovenia" : {
-    "location": "https://download.geofabrik.de/europe/slovenia-latest.osm.pbf",
-    "checks":
-    [
-      "checks.LatinNameExistsCheck",
-      "checks.LatinNameSameAsCyrillicCheck",
-      "checks.LatinNameNotInCyrillicCheck"
-    ]
-  },
-  "Serbia-AddingName": {
-    "location": "sparql/adding-name.sparql",
-    "checks": [
-      "checks.GenericSophoxCheck"
-    ]
-  },
-  "Serbia-AddingNameSrLatn-North": {
-    "location": "sparql/adding_namesr-latn_north.sparql",
-    "checks": [
-      "checks.GenericSophoxCheck"
-    ]
-  },
-  "Serbia-AddingNameSrLatn-South": {
-    "location": "sparql/adding_namesr-latn_south.sparql",
-    "checks": [
-      "checks.GenericSophoxCheck"
-    ]
-  },
-  "Serbia-AddingNameSr-North": {
-    "location": "sparql/adding_namesr_north.sparql",
-    "checks": [
-      "checks.GenericSophoxCheck"
-    ]
-  },
-  "Serbia-AddingNameSr-Central": {
-    "location": "sparql/adding_namesr_central.sparql",
-    "checks": [
-      "checks.GenericSophoxCheck"
-    ]
-  },
-  "Serbia-AddingNameSr-West": {
-    "location": "sparql/adding_namesr_west.sparql",
-    "checks": [
-      "checks.GenericSophoxCheck"
-    ]
-  },
-  "Serbia-AddingNameSr-East": {
-    "location": "sparql/adding_namesr_east.sparql",
-    "checks": [
-      "checks.GenericSophoxCheck"
-    ]
-  },
-  "Serbia-AddingNameSr-South": {
-    "location": "sparql/adding_namesr_south.sparql",
-    "checks": [
+      "checks.WikidataEntryExistsCheck",
       "checks.GenericSophoxCheck"
     ]
   }

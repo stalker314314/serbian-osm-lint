@@ -10,6 +10,7 @@ logger = tools.get_logger(__name__)
 
 p_metadata = re.compile('#defaultView:Editor\s*(?P<json>.*)')
 
+
 class SophoxSource(OSMSource):
     def __init__(self, context, process_entity_callback, map_name, query):
         super(SophoxSource, self).__init__(context, map_name, process_entity_callback)

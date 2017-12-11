@@ -36,8 +36,8 @@ def process_entity(entity, context):
     :param context: Context
     :return: List of all performed checks
     """
-    map_name = context['map']
-    cr = CheckEngine(context['maps'][map_name]['checks'], entity, context)
+    map_check = context['map-check']
+    cr = CheckEngine(map_check['checks'], entity, context)
     return cr.check_all()
 
 
@@ -91,10 +91,30 @@ def generate_report(context, all_checks):
 
     check_types = collections.OrderedDict(sorted(check_types.items(), key=lambda c: c[0]))
 
-    # Sort all checks by country (and sort all values which are also dictionaries by entity id)
+
+    # Each check is under "<overall_map_name> (<particular_source>)" and
+    # we want to regroup and merge them all under "<overall_map_name>" only.
+    all_checks_merged = {}
+    for full_map_name, check_dict in all_checks.items():
+        overall_map_name = full_map_name.split(' (')[0]
+        if overall_map_name not in all_checks_merged:
+            all_checks_merged[overall_map_name] = {}
+        for entity_id, checks in check_dict.items():
+            if entity_id not in all_checks_merged[overall_map_name]:
+                all_checks_merged[overall_map_name][entity_id] = checks
+            else:
+                existing_checks_dict = checks[2]
+                for existing_check_name, existing_check_dict in existing_checks_dict.items():
+                    if existing_check_name in all_checks_merged[overall_map_name][entity_id][2]:
+                        # Somehow we already have this entity with this check
+                        pass
+                    else:
+                        all_checks_merged[overall_map_name][entity_id][2][existing_check_name] = existing_check_dict
+
+    # Sort all checks by overall map name (and sort all values which are also dictionaries by entity name)
     all_checks_sorted = {}
-    for check, check_dict in all_checks.items():
-        all_checks_sorted[check] = collections.OrderedDict(sorted(check_dict.items(), key=lambda c: c[0]))
+    for full_map_name, check_dict in all_checks_merged.items():
+        all_checks_sorted[full_map_name] = collections.OrderedDict(sorted(check_dict.items(), key=lambda c: c[1][0]))
     all_checks_sorted = collections.OrderedDict(sorted(all_checks_sorted.items(), key=lambda c: c[0]))
 
     output = template.render(d=datetime.datetime.now(), summary=summary, countries=countries, check_types=check_types,
@@ -141,12 +161,25 @@ def create_global_context():
             config = simplejson.load(f)
         except Exception as e:
             parser.error('Error during parsing of {}: \n{}'.format(args.config_file, e))
+
     # Replace checks in config with their eval-ulated version (helps to detects errors earlier)
-    for map in config:
+    for _checks in config:
         eval_checks = []
-        for check in config[map]['checks']:
+        for check in config[_checks]['checks']:
             eval_checks.append(eval(check))
-        config[map]['checks'] = eval_checks
+        config[_checks]['checks'] = eval_checks
+
+    # Create Descartes product of all maps and all checks which we use throughout whole program
+    config['_map-checks'] = []
+    for _checks in config:
+        if _checks.startswith('_'):
+            continue
+        for _map in config[_checks]['maps']:
+            config['_map-checks'].append({
+                "name": "{0} ({1})".format(_checks, _map),
+                "location": config[_checks]['maps'][_map],
+                "checks": config[_checks]['checks']
+            })
 
     try:
         changeset_size = int(args.changeset_size)
@@ -162,7 +195,7 @@ def create_global_context():
                                      u"wikidata/wikipedia links",
                          u"tag": u"mechanical=yes"})
 
-    global_context = {'maps': config,
+    global_context = {'map-checks': config['_map-checks'],
                       'report': not args.no_report,
                       'fix': args.fix,
                       'dry_run': args.dry_run,
@@ -171,16 +204,16 @@ def create_global_context():
     return global_context
 
 
-def process_map(context, map_name):
+def process_map(context, map_check):
     """
     Figures out which source it should use and calls it
     """
-    logger.info('[%s] Starting processing of map %s', map_name, map_name)
+    logger.info('[%s] Starting processing of map %s', map_check['name'], map_check['name'])
     context = context.copy()
-    context['map'] = map_name
+    context['map-check'] = map_check
     source_factory = SourceFactory(process_entity, context)
-    source = source_factory.create_source(map_name)
-    return map_name, source.process_map()
+    source = source_factory.create_source(map_check)
+    return map_check['name'], source.process_map()
 
 
 def main():
@@ -188,14 +221,14 @@ def main():
 
     all_futures = []
     thread_count = 1 if global_context['fix'] else multiprocessing.cpu_count()
-    thread_count = min(thread_count, len(global_context['maps']))
+    thread_count = min(thread_count, len(global_context['map-checks']))
     logger.info('Using %d threads to do work', thread_count)
 
     # If we are fixing stuff, we cannot use ProcessPoolExecutor since threads are interacting with user
     executor_cls = ThreadPoolExecutor if global_context['fix'] else ProcessPoolExecutor
     with executor_cls(max_workers=thread_count) as executor:
-        for map_name in global_context['maps']:
-            future = executor.submit(process_map, global_context, map_name)
+        for map_check in global_context['map-checks']:
+            future = executor.submit(process_map, global_context, map_check)
             all_futures.append(future)
 
         all_checks = {}

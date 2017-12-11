@@ -1,0 +1,42 @@
+#defaultView:Editor{ "comment":"Semi-automatic cyrillization of name:sr for highways and places in Serbia and close surrounding", "check_description": "Entity {0} is not having cyrillic name:sr tag", "vote":false }
+SELECT
+  ?id ?loc (?namesr AS ?name)
+  ('name:sr' AS ?tag_1) (?fixed as ?val_1)
+WHERE {
+  ?id osmt:name:sr ?namesr .
+
+  FILTER (EXISTS { ?id osmt:place ?place } || EXISTS { ?id osmt:highway ?highway }) .
+  # Ovako filtriramo samo latinicna imena. Primetiti da nedostaju slova "i" i "v". To je zato sto su cesta u rimskim brojevima, pa mozemo da ih izostavimo
+  # Gubimo ovako detekciju latinicnih imena "iii", "vi", "viv", ali to je OK cena za platiti:)
+  FILTER (regex(str(?namesr), "a|b|c|č|ć|d|đ|e|f|g|h|j|k|l|m|n|o|p|r|s|š|t|u|z|ž", "i")) .
+  #FILTER (!regex(str(?namesr), "x|y|w|q", "i")) . # Ovako filtriramo ocigledno engleska imena
+
+  # Prvo duple
+  BIND(
+    REPLACE(REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (?namesr, "DŽ", "Џ"), "Dž", "Џ"), "NJ", "Њ"), "Nj", "Њ"), "LJ", "Љ"), "dž", "џ"), "nj", "њ"), "lj", "љ")
+   AS ?dupla)
+  # Mala slova
+  BIND(
+    REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (
+    REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (
+    REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (?dupla,
+      "a", "а"), "b", "б"), "v", "в"), "g", "г"), "d", "д"), "đ", "ђ"), "e", "е"), "ž", "ж"), "z", "з"), "i", "и"),
+      "j", "ј"), "k", "к"), "l", "л"), "m", "м"), "n", "н"), "o", "о"), "p", "п"), "r", "р"), "s", "с"), "t", "т"),
+      "ć", "ћ"), "u", "у"), "f", "ф"), "h", "х"), "c", "ц"), "č", "ч"), "š", "ш")
+  AS ?mala)
+  # Velika slova
+  BIND(
+    REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (
+    REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (
+    REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (REPLACE (?mala,
+    "A", "А"), "B", "Б"), "V", "В"), "G", "Г"), "D", "Д"), "Đ", "Ђ"), "E", "Е"), "Ž", "Ж"), "Z", "З"), "I", "И"),
+    "J", "Ј"), "K", "К"), "L", "Л"), "M", "М"), "N", "Н"), "O", "О"), "P", "П"), "R", "Р"), "S", "С"), "T", "Т"),
+    "Ć", "Ћ"), "U", "У"), "F", "Ф"), "H", "Х"), "C", "Ц"), "Č", "Ч"), "Š", "Ш")
+  AS ?fixed)
+
+  SERVICE wikibase:around {
+    ?id osmm:loc ?loc .
+    bd:serviceParam wikibase:center "Point(21.00403 44.04751)"^^geo:wktLiteral.
+    bd:serviceParam wikibase:radius "250" .
+  }
+}

@@ -20,7 +20,6 @@ class CheckEngine(object):
     """
     def __init__(self, check_classes, entity, global_context):
         self.check_classes = check_classes[:]
-        self.map_name = global_context['map']
         self.entity = entity
         self.global_context = global_context
 

@@ -142,7 +142,7 @@ class AbstractCheck(object):
     def __init__(self, entity_context):
         self.entity_context = entity_context
         # helpers to shorten getting stuff from global_context
-        self.map = entity_context['global_context']['map']
+        self.map_name = entity_context['global_context']['map-check']['name']
         self.dry_run = entity_context['global_context']['dry_run']
 
     def do_check(self, entity):
@@ -183,7 +183,7 @@ class AbstractCheck(object):
 
             print('{0}: {1}'.format(k, v))
         print('https://www.openstreetmap.org/{0}/{1}'.format(entity.entity_type, entity.id))
-        response = input('[{0}] {1} (Y/n)?'.format(self.map, input_text))
+        response = input('[{0}] {1} (Y/n)?'.format(self.map_name, input_text))
         if response == '' or response.lower() == 'y':
             return True
         return False
@@ -215,12 +215,12 @@ class NameCyrillicCheck(AbstractCheck):
         super(NameCyrillicCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
-        if self.map == 'Serbia' and 'name' in entity.tags and entity.tags['name']:
+        if 'Serbia checks' in self.map_name and 'name' in entity.tags and entity.tags['name']:
             # Exclude places close, but not in Serbia
             if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
                 return ''
             name = entity.tags['name']
-        elif self.map != 'Serbia' and 'name:sr' in entity.tags and entity.tags['name:sr']:
+        elif 'Serbia checks' not in self.map_name and 'name:sr' in entity.tags and entity.tags['name:sr']:
             name = entity.tags['name:sr']
         else:
             return ''
@@ -242,16 +242,16 @@ class LatinNameExistsCheck(AbstractCheck):
         super(LatinNameExistsCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
-        if self.map == 'Serbia' and 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
+        if 'Serbia checks' in self.map_name and 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
             # Exclude places close, but not in Serbia
             if 'is_in:country' in entity.tags and entity.tags['is_in:country'] != 'Serbia':
                 return ''
             return ''
-        if self.map != 'Serbia' and 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
+        if 'Serbia checks' not in self.map_name and 'name:sr-Latn' in entity.tags and entity.tags['name:sr-Latn']:
             return ''
-        if self.map != 'Serbia' and 'name:sr' not in entity.tags:
+        if 'Serbia checks' not in self.map_name and 'name:sr' not in entity.tags:
             # If there is no name in cyrillic, no way we can deduce sr-Latn name. Let it alone, there
-            # are other checks (for cyrillic name existance) that will catch this entity
+            # are other checks (for cyrillic name existence) that will catch this entity
             return ''
 
         place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'
@@ -259,7 +259,7 @@ class LatinNameExistsCheck(AbstractCheck):
         return 'Latin name missing for {0} {1}'.format(place_type, name)
 
     def fix(self, entity, api):
-        if self.map == 'Serbia':
+        if 'Serbia checks' in self.map_name:
             if NameMissingCheck(self.entity_context).do_check(entity) != '':
                 # We cannot automatically set latin name, if cyrillic is not set
                 return ''
@@ -271,7 +271,7 @@ class LatinNameExistsCheck(AbstractCheck):
             # Doesn't make sense to set latin name, if original name is not in cyrillic
             return ''
 
-        name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
+        name = entity.tags['name'] if 'Serbia checks' in self.map_name else entity.tags['name:sr']
         latin_name = cyr2lat(name)
         question = 'Are you sure you want to append tag "name:sr-Latn" with value "{0}" to entity "{1}"'.format(
             latin_name, name
@@ -307,9 +307,9 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
         super(LatinNameSameAsCyrillicCheck, self).__init__(entity_context)
 
     def do_check(self, entity):
-        if self.map == 'Serbia' and 'name' not in entity.tags:
+        if 'Serbia checks' in self.map_name and 'name' not in entity.tags:
             return ''
-        if self.map != 'Serbia' and 'name:sr' not in entity.tags:
+        if 'Serbia checks' not in self.map_name and 'name:sr' not in entity.tags:
             return ''
         if 'name:sr-Latn' not in entity.tags:
             return ''
@@ -318,7 +318,7 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
             return ''
 
         latin_name = entity.tags['name:sr-Latn']
-        cyrillic_name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
+        cyrillic_name = entity.tags['name'] if 'Serbia checks' in self.map_name else entity.tags['name:sr']
         if cyr2lat(cyrillic_name) != latin_name:
             place_type = entity.tags['place'] if 'place' in entity.tags else '(unknown place type)'
             return 'Latin name {0} for {1} {2} is not properly transliterated'.format(
@@ -326,7 +326,7 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
         return ''
 
     def fix(self, entity, api):
-        name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
+        name = entity.tags['name'] if 'Serbia checks' in self.map_name else entity.tags['name:sr']
         old_latin_name = entity.tags['name:sr-Latn']
         correct_latin_name = cyr2lat(name)
         question = 'Latin name different than cyrillic name. Are you sure you want to change tag "name:sr-Latn" ' \
@@ -335,7 +335,7 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
         )
         if entity.entity_type == 'way':
             way = api.WayGet(entity.id)
-            online_name = way['tag']['name'] if self.map == 'Serbia' else way['tag']['name:sr']
+            online_name = way['tag']['name'] if 'Serbia checks' in self.map_name else way['tag']['name:sr']
             if 'name:sr-Latn' in way['tag'] and online_name == name and way['tag']['name:sr-Latn'] == old_latin_name:
                 if self.ask_confirmation(question, entity):
                     way['tag']['name:sr-Latn'] = correct_latin_name
@@ -345,7 +345,7 @@ class LatinNameSameAsCyrillicCheck(AbstractCheck):
                         name, correct_latin_name)
         elif entity.entity_type == 'node':
             node = api.NodeGet(entity.id)
-            online_name = node['tag']['name'] if self.map == 'Serbia' else node['tag']['name:sr']
+            online_name = node['tag']['name'] if 'Serbia checks' in self.map_name else node['tag']['name:sr']
             if 'name:sr-Latn' in node['tag'] and online_name == name and node['tag']['name:sr-Latn'] == old_latin_name:
                 if self.ask_confirmation(question, entity):
                     node['tag']['name:sr-Latn'] = correct_latin_name
@@ -406,7 +406,7 @@ class WikipediaEntryExistsCheck(AbstractCheck):
             # We should not set Wikipedia tag, if name is not in cyrillic
             return ''
 
-        name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
+        name = entity.tags['name'] if 'Serbia checks' in self.map_name else entity.tags['name:sr']
         guess_from_wiki = _guess_from_wikipedia(name, entity, api,
                                                 ['Насељено место у Србији', 'Град у Србији', 'Градска четврт'])
         if guess_from_wiki:
@@ -469,7 +469,7 @@ class WikipediaEntryIsInSerbianCheck(AbstractCheck):
             # We should not set Wikipedia tag, if name is not in cyrillic
             return ''
 
-        name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
+        name = entity.tags['name'] if 'Serbia checks' in self.map_name else entity.tags['name:sr']
         guess_from_wiki = _guess_from_wikipedia(name, entity, api,
                                                 ['Насељено место у Србији', 'Град у Србији', 'Градска четврт'])
         if guess_from_wiki:
@@ -580,7 +580,7 @@ class WikidataEntryExistsCheck(AbstractCheck):
             # If Wikipedia is not valid entry, no point getting wikidata
             return ''
 
-        name = entity.tags['name'] if self.map == 'Serbia' else entity.tags['name:sr']
+        name = entity.tags['name'] if 'Serbia checks' in self.map_name else entity.tags['name:sr']
         wikipedia_entry = self.entity_context['local_store']['wikipedia'] \
             if 'wikipedia' in self.entity_context['local_store'] else None
 
@@ -700,7 +700,8 @@ class IsInCountryCheck(AbstractCheck):
 
 class GenericSophoxCheck(AbstractCheck):
     """
-    Check semantically same to Sophox service. Will also fix things if there are (tag_N, val_N) pairs.
+    Generic check using Sophox service with whatever SPARQL query is given.
+    Will also fix things if there are (tag_N, val_N) pairs.
     """
     applicable_on = [SophoxEntity]
     is_fixable = True
@@ -710,7 +711,7 @@ class GenericSophoxCheck(AbstractCheck):
 
     def do_check(self, entity):
         # By definition, everything returned from Sophox is not passing check
-        name = entity.tags['name']['value'] if 'name' in entity.tags else entity.id
+        name = entity.tags['name'] if 'name' in entity.tags else entity.id
         check_description = entity.tags['metadata']['check_description'] \
             if 'check_description' in entity.tags['metadata'] else 'no description'
         return check_description.format(name)

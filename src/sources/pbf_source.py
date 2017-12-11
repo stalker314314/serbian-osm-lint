@@ -92,8 +92,10 @@ class PBFSource(OSMSource):
         from osmread import parse_file
 
         for raw_entity in parse_file(filename):
-            self._entity_found(self, raw_entity)
-
+            self._entity_found(raw_entity)
+            # If needed, this is how you can stop execution early
+            # if self.processed > 100000:
+            #     return
 
     def process_map_with_osmium(self, filename):
         """
@@ -113,6 +115,9 @@ class PBFSource(OSMSource):
                 self.all_checks = {}
 
             def process_entity(self, raw_entity, entity_type):
+                # If needed, this is how you can stop execution early
+                # if self.processed > 100000:
+                #     raise Exception
                 self.entity_found_callback(raw_entity)
 
             def node(self, n):

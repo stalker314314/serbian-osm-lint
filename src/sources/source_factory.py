@@ -3,6 +3,7 @@
 from sources.pbf_source import PBFSource
 from sources.sophox_source import SophoxSource
 
+
 class SourceFactory(object):
     """
     Based on info in configuration, creates appropriate source
@@ -11,14 +12,14 @@ class SourceFactory(object):
         self.process_entity_callback = process_entity_callback
         self.context = context
 
-    def create_source(self, map_name):
-        location = self.context['maps'][map_name]['location']
+    def create_source(self, map_check):
+        location = map_check['location']
         if location.endswith(".pbf"):
-            return PBFSource(self.context, self.process_entity_callback, map_name, location)
+            return PBFSource(self.context, self.process_entity_callback, map_check['name'], location)
         elif location.endswith(".sparql"):
             query = None
             with open(location, 'r', encoding='utf-8') as f:
                 query = f.read()
-            return SophoxSource(self.context, self.process_entity_callback, map_name, query)
+            return SophoxSource(self.context, self.process_entity_callback, map_check['name'], query)
         else:
             raise Exception("Unknown source")

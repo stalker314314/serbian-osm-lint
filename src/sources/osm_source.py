@@ -28,8 +28,6 @@ class OSMSource(object):
         self.processed += 1
         if self.processed % 100000 == 0:
             logger.info('[%s] Processed %d entities', self.map_name, self.processed)
-            # If needed, this is how you can stop execution early
-            # return all_checks
         try:
             entity = OsmLintEntity(raw_entity)
         except AttributeError as e:
@@ -39,12 +37,7 @@ class OSMSource(object):
 
         checks_done = self.process_entity_callback(entity, self.context)
         if len(checks_done) > 0:
-            if self.context['map'] == 'Serbia':
-                name = entity.tags['name'] if 'name' in entity.tags else entity.id
-            else:
-                original_name = entity.tags['name'] if 'name' in entity.tags else entity.id
-                if 'name:sr' in entity.tags:
-                    name = '{0} / {1}'.format(original_name, entity.tags['name:sr'])
-                else:
-                    name = original_name
+            name = entity.tags['name'] if 'name' in entity.tags else str(entity.id)
+            if 'name:sr' in entity.tags:
+                name = '{0} / {1}'.format(name, entity.tags['name:sr'])
             self.all_checks[entity.id] = (name, entity.entity_type, checks_done)

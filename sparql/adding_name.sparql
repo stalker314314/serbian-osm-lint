@@ -1,0 +1,16 @@
+#defaultView:Editor{ "comment":"Adding name tag if there is name:sr tag", "vote":false }
+SELECT
+  ?id (?namesr AS ?name) ?loc ("name" AS ?tag_1) (?namesr AS ?val_1)
+WHERE {
+  ?id osmt:name:sr ?namesr;
+      osmt:highway ?highway .
+
+  FILTER (NOT EXISTS { ?id osmt:name ?namereal . }) .
+
+  SERVICE wikibase:around {
+    ?id osmm:loc ?loc .
+    # Whole Serbia and a bit more
+    bd:serviceParam wikibase:center "Point(21.00403 44.04751)"^^geo:wktLiteral.
+    bd:serviceParam wikibase:radius "250" .
+  }
+}

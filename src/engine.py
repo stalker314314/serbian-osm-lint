@@ -43,7 +43,7 @@ class CheckEngine(object):
                     # This can happen during fixing, just ignore and continue
                     logger.exception(e)
                 if message_fixed != '':
-                    logger.debug('[%s] %s', check.entity_context['global_context']['map'], message_fixed)
+                    logger.debug('[%s] %s', check.entity_context['global_context']['map-check']['name'], message_fixed)
         return message
 
     def check_all(self, filter_not_checked=True):

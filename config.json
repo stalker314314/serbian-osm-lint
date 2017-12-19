@@ -25,7 +25,8 @@
       "Sophox adding missing name:sr east": "sparql/adding_namesr_east.sparql",
       "Sophox adding missing name:sr south": "sparql/adding_namesr_south.sparql",
       "Sophox adding missing name:sr-Latn north": "sparql/adding_namesr-latn_north.sparql",
-      "Sophox adding missing name:sr-Latn north": "sparql/adding_namesr-latn_south.sparql"
+      "Sophox adding missing name:sr-Latn north": "sparql/adding_namesr-latn_south.sparql",
+      "Sophox adding int_name": "sparql/adding_int_name.sparql"
     },
     "checks": [
       "checks.LatinNameExistsCheck",

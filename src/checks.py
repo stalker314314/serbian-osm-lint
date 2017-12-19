@@ -733,8 +733,8 @@ class GenericSophoxCheck(AbstractCheck):
             value_key = 'val_{0}'.format(suggestion_id)
             if tag_key not in entity.tags:  # If there is no this tag, we reached the end
                 break
-            tag = entity.tags[tag_key]['value']
-            val = entity.tags[value_key]['value']
+            tag = entity.tags[tag_key]
+            val = entity.tags[value_key]
             if val == 'false' and entity.tags[value_key]['datatype'] == 'http://www.w3.org/2001/XMLSchema#boolean':
                 val = None
 

@@ -1,0 +1,27 @@
+#defaultView:Editor{ "comment":"Workaround for Nominatim GitHub issue #862, adding int_name", "check_description": "Entity {0} could be better searchable with int_name", "vote":false }
+SELECT
+  ?id ?loc (?namesr AS ?name)
+  ('int_name' AS ?tag_1) (?correctRomanizedLatin as ?val_1)
+WHERE {
+  ?id osmt:name:sr-Latn ?namesr .
+
+  FILTER (regex(str(?namesr), "đ", "i")) .
+
+  BIND(
+    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(?namesr,
+      'Đ', 'Dj'), 'Ž', 'Z'), 'Ć', 'C'), 'Č', 'C'), 'Š', 'S'),
+      'đ', 'dj'), 'ž', 'z'), 'ć', 'c'), 'č', 'c'), 'š', 's')
+  as ?correctRomanizedLatin)
+
+  OPTIONAL { ?id osmt:int_name ?currentIntName . } . # Uzmi trenutni int_name, ako postoji
+  # Samo radimo ako int_name ne postoji, ili ako se postojeci ne slaze sa trenutnim
+  FILTER (NOT EXISTS { ?id osmt:int_name ?intname . }) .
+  FILTER (NOT EXISTS { ?id osmt:int_name ?intname . } || ?currentIntName != ?correctRomanizedLatin)
+
+  SERVICE wikibase:around {
+    ?id osmm:loc ?loc .
+    bd:serviceParam wikibase:center "Point(21.00403 44.04751)"^^geo:wktLiteral.
+    bd:serviceParam wikibase:radius "250" .
+  }
+}

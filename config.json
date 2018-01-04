@@ -24,14 +24,11 @@
       "Sophox adding missing name:sr west": "sparql/adding_namesr_west.sparql",
       "Sophox adding missing name:sr east": "sparql/adding_namesr_east.sparql",
       "Sophox adding missing name:sr south": "sparql/adding_namesr_south.sparql",
-      "Sophox adding missing name:sr-Latn north": "sparql/adding_namesr-latn_north.sparql",
-      "Sophox adding missing name:sr-Latn north": "sparql/adding_namesr-latn_south.sparql",
+      "Sophox checking name:sr-Latn north": "sparql/checking_namesr-latn_north.sparql",
+      "Sophox checking name:sr-Latn south": "sparql/checking_namesr-latn_south.sparql",
       "Sophox adding int_name": "sparql/adding_int_name.sparql"
     },
     "checks": [
-      "checks.LatinNameExistsCheck",
-      "checks.LatinNameSameAsCyrillicCheck",
-      "checks.LatinNameNotInCyrillicCheck",
       "checks.WikipediaEntryExistsCheck",
       "checks.WikipediaEntryIsInSerbianCheck",
       "checks.WikipediaEntryValidCheck",

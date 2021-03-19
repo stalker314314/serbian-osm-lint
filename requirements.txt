@@ -1,4 +1,4 @@
-Jinja2==2.8.1
+Jinja2==2.11.3
 nose==1.3.7
 osmapi==1.0.2
 osmread==0.2

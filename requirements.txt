@@ -5,7 +5,7 @@ osmread==0.2
 pywikibot==3.0.20170801
 mwparserfromhell==0.5
 requests==2.18.4
-urllib3==1.22
+urllib3==1.26.5
 osmium==2.13.0
 simplejson==3.11.1
 SPARQLWrapper==1.8.0
